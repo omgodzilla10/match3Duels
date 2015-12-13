@@ -30,3 +30,24 @@ The Main Menu will have three selectable options:
 The "Play" option, when selected, will take the user to a screen where they can select their gem deck to use for the game, as well as the AI difficulty. When the player starts the match, the primary match interface will load, and a 3-second countdown will lead the player into the match.
 
 The primary match interface will show a 6x6 match-3 interface at the bottom, the player's health bar in green below it. Above the match-3 board will be the actual playing field, which will have a glass-like appearance. The playing field will be where spells that are cast by either player are shot across, and where the visual effects will appear. At the top of the screen will be the opponent's health bar, which will look identical to the player's health bar.
+
+Game End Screen
+
+At the end of the game, the victor will be declared on screen. A 5-second timer will appear, asking the user to tap if they want a rematch. In online mode, the game will start again if both players tap for a rematch. If the rematch does not receive two votes, the game will end, and players will resume to the main menu.
+
+If the user has won any new gems or items, they will be displayed on screen immeadiatley when the user returns to the main menu.
+
+Customize Deck Screen
+
+The deck customization menu will have 5 slots for 5 different gems. Every gem that the player owns will appear in an inventory interface in the lower half of the screen, and the 5 equip slots will appear above the inventory. Users can drag each gem to a slot to fill the slot of replace whatever was in that slot. The player can also tap on each gem to see more information about it.
+
+Options Menu
+
+The options menu will have the following options:
+ - Sound (toggle)
+ - Sound Volume (slider)
+ - ??? (more to come)
+
+Gameplay
+
+The game will consist of two opponents casting "spells" simultaneously in real-time. Each spell will be cast when three or more gems are matched in a 6x6 match 3 interface in the lower-half of the player's screen. The match will be against a human and an ai opponent for the time being, and in the future, human vs human matches over the internet will be possible.
