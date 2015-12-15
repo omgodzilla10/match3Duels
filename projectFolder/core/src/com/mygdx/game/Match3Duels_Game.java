@@ -24,7 +24,7 @@ public class Match3Duels_Game implements Screen {
     static final int SPRITE_PADDING = 30;
     
     /** The global animation speed of each gem when moved. */
-    final float GEM_MOVE_DURATION = 0.5f;
+    final static float GEM_MOVE_DURATION = 0.15f;
     
     /** The maximum number of gems allowed to be in use. */
     final int MAX_GEMS = 5;
@@ -36,7 +36,7 @@ public class Match3Duels_Game implements Screen {
     private int screenHeight;
     
     /** An array for each of the gem actors on the board. */
-    private Actor[][] boardGemArray;
+    private static Actor[][] boardGemArray;
     
     /** The stage on which the board and UI elements will appear. */
     private Stage gameStage;
@@ -45,10 +45,10 @@ public class Match3Duels_Game implements Screen {
     private StretchViewport sViewport;
     
     /** Used to animate the gem being moved by the player. */
-    private MoveToAction gemMoveAction;
+    private static MoveToAction gemMoveAction;
     
     /** Used to animate the gem being swapped with the moved gem. */
-    private MoveToAction gemSwapAction;
+    private static MoveToAction gemSwapAction;
     
     /** The constructor. 
      * 
@@ -99,13 +99,69 @@ public class Match3Duels_Game implements Screen {
     }
     
     public static void moveGem(int dir, int signature) {
+        GemActor currentActor;
+        GemActor swappingActor;
+        
+        int col = findCol(signature);
+        int row = signature - (col * BOARD_ROWS);
+        
+        int sigAdj;
+        int colAdj;
+        int rowAdj;
+        
+        currentActor = (GemActor) boardGemArray[col][row];
+        
         switch (dir) {
         case GemTouchListener.DIR_RIGHT: 
-            System.out.println("Gem #" + signature + " moving right!");
+            if(col != 5) {
+                sigAdj = signature + BOARD_ROWS;
+                colAdj = findCol(sigAdj);
+                rowAdj = sigAdj - (colAdj * BOARD_ROWS);
+                
+                swappingActor = (GemActor) boardGemArray[colAdj][rowAdj];
+                
+                gemMoveAction.setPosition(swappingActor.getX(), swappingActor.getY());
+                gemMoveAction.setDuration(GEM_MOVE_DURATION);
+                
+                gemSwapAction.setPosition(currentActor.getX(), currentActor.getY());
+                gemSwapAction.setDuration(GEM_MOVE_DURATION);
+                
+                gemMoveAction.reset();
+                gemSwapAction.reset();
+                currentActor.addAction(gemMoveAction);
+                swappingActor.addAction(gemSwapAction);
+                
+                //Set new signatures for each 
+                int tempSig = signature;
+                ((GemActor)currentActor).setSignature(sigAdj);
+                ((GemActor)swappingActor).setSignature(tempSig);
+                
+                System.out.println("Passed in signature: " + signature);
+            }
+            
             break;
         case GemTouchListener.DIR_UP:
             break;
         }
+    }
+    
+    public static int findCol(int signature) {
+        int col = 0;
+        
+        if(signature < BOARD_ROWS)
+            col = 0;
+        else if(signature < (2 * BOARD_ROWS))
+            col = 1;
+        else if(signature < (3 * BOARD_ROWS))
+            col = 2;
+        else if(signature < (4 * BOARD_ROWS))
+            col = 3;
+        else if(signature < (5 * BOARD_ROWS))
+            col = 4;
+        else if(signature < (6 * BOARD_ROWS))
+            col = 5;
+        
+        return col;
     }
 
     @Override
