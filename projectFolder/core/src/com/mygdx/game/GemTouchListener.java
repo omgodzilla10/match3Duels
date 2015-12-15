@@ -15,7 +15,7 @@ public class GemTouchListener extends InputListener {
     final float MAX_ANG_QUAD_04 = 314;
     final float MIN_ANG_QUAD_04 = 226;
     
-    final int MIN_OFFSET = 25;
+    final int MIN_OFFSET = 20;
     static final int DIR_RIGHT = 0;
     static final int DIR_UP = 1;
     static final int DIR_LEFT = 2;
