@@ -10,19 +10,25 @@ import com.badlogic.gdx.scenes.scene2d.Touchable;
 
 public class FireGemActor_01 extends GemActor {
     private int spriteXY;
+    private int signature;
     private Sprite gemSprite;
+    
+    private GemTouchListener listener;
     
     public FireGemActor_01() {
         spriteXY = (Gdx.graphics.getWidth() / Match3Duels_Game.BOARD_ROWS) 
                 - Match3Duels_Game.SPRITE_PADDING;
+        signature = setSignature();
         gemSprite = new Sprite(new Texture(Gdx.files.internal("gem_fire_01.png")));
+        
+        listener = new GemTouchListener(this, signature);
         
         gemSprite.setSize(spriteXY, spriteXY);
         setBounds(gemSprite.getX(), gemSprite.getY(), gemSprite.getWidth(), 
                 gemSprite.getHeight());
         
         setTouchable(Touchable.enabled);
-        addListener(new GemTouchListener(this));
+        addListener(listener);
     }
     
     @Override
@@ -39,5 +45,11 @@ public class FireGemActor_01 extends GemActor {
     protected void positionChanged() {
         gemSprite.setPosition(getX(), getY());
         super.positionChanged();
+    }
+
+    @Override
+    public void setSignature(int newSignature) {
+        signature = newSignature;
+        listener.setSignature(signature);
     }
 }

@@ -11,6 +11,7 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 
 public class Match3Duels_Game implements Screen {
@@ -23,7 +24,7 @@ public class Match3Duels_Game implements Screen {
     static final int SPRITE_PADDING = 30;
     
     /** The global animation speed of each gem when moved. */
-    static final float GEM_MOVE_DURATION = 0.5f;
+    final float GEM_MOVE_DURATION = 0.5f;
     
     /** The maximum number of gems allowed to be in use. */
     final int MAX_GEMS = 5;
@@ -43,6 +44,12 @@ public class Match3Duels_Game implements Screen {
     /** The stage's viewport. */
     private StretchViewport sViewport;
     
+    /** Used to animate the gem being moved by the player. */
+    private MoveToAction gemMoveAction;
+    
+    /** Used to animate the gem being swapped with the moved gem. */
+    private MoveToAction gemSwapAction;
+    
     /** The constructor. 
      * 
      * @param game - Passed in when the game is launched 
@@ -58,6 +65,9 @@ public class Match3Duels_Game implements Screen {
         gameStage = new Stage(sViewport);
         
         Gdx.input.setInputProcessor(gameStage);
+        
+        gemMoveAction = new MoveToAction();
+        gemSwapAction = new MoveToAction();
         
         //Initialize the board arrays with random gems
         boardGemArray = new Actor[BOARD_ROWS][BOARD_ROWS];
@@ -88,8 +98,14 @@ public class Match3Duels_Game implements Screen {
         }
     }
     
-    public static void moveGem(int dir) {
-        
+    public static void moveGem(int dir, int signature) {
+        switch (dir) {
+        case GemTouchListener.DIR_RIGHT: 
+            System.out.println("Gem #" + signature + " moving right!");
+            break;
+        case GemTouchListener.DIR_UP:
+            break;
+        }
     }
 
     @Override

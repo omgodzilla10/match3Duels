@@ -20,13 +20,16 @@ public class GemTouchListener extends InputListener {
     static final int DIR_LEFT = 2;
     static final int DIR_DOWN = 3;
     
+    private int signature;
+    
     private float originX;
     private float originY;
     
     private Actor actor;
     
-    public GemTouchListener(Actor actor) {
+    public GemTouchListener(Actor actor, int signature) {
         this.actor = actor;
+        this.signature = signature;
         
         originX = 0;
         originY = 0;
@@ -62,22 +65,26 @@ public class GemTouchListener extends InputListener {
         //Move right.
         if(dragAngle <= MAX_ANG_QUAD_01 || dragAngle >= MIN_ANG_QUAD_01) {
             System.out.println("Move right!"); //Debug
-            Match3Duels_Game.moveGem(DIR_RIGHT);
+            Match3Duels_Game.moveGem(DIR_RIGHT, signature);
         }
         //Move up.
         else if(dragAngle <= MAX_ANG_QUAD_02 && dragAngle >= MIN_ANG_QUAD_02) {
             System.out.println("Move up!");
-            Match3Duels_Game.moveGem(DIR_UP);
+            Match3Duels_Game.moveGem(DIR_UP, signature);
         }
         //Move left.
         else if(dragAngle <= MAX_ANG_QUAD_03 && dragAngle >= MIN_ANG_QUAD_03) {
             System.out.println("Move left!");
-            Match3Duels_Game.moveGem(DIR_LEFT);
+            Match3Duels_Game.moveGem(DIR_LEFT, signature);
         }
         //Move down.
         else if(dragAngle <= MAX_ANG_QUAD_04 && dragAngle >= MIN_ANG_QUAD_04) {
             System.out.println("Move down!");
-            Match3Duels_Game.moveGem(DIR_DOWN);
+            Match3Duels_Game.moveGem(DIR_DOWN, signature);
         }
+    }
+    
+    public void setSignature(int signature) {
+        this.signature = signature;
     }
 }
