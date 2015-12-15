@@ -105,7 +105,6 @@ public class Match3Duels_Game implements Screen {
         int col = findCol(signature);
         int row = signature - (col * BOARD_ROWS);
         
-        int sigAdj;
         int colAdj;
         int rowAdj;
         
@@ -114,11 +113,12 @@ public class Match3Duels_Game implements Screen {
         switch (dir) {
         case GemTouchListener.DIR_RIGHT: 
             if(col != 5) {
-                sigAdj = signature + BOARD_ROWS;
-                colAdj = findCol(sigAdj);
-                rowAdj = sigAdj - (colAdj * BOARD_ROWS);
+                colAdj = col + 1;
+                rowAdj = row;
                 
                 swappingActor = (GemActor) boardGemArray[colAdj][rowAdj];
+                
+                System.out.println("Passed in: " + signature);
                 
                 gemMoveAction.setPosition(swappingActor.getX(), swappingActor.getY());
                 gemMoveAction.setDuration(GEM_MOVE_DURATION);
@@ -132,11 +132,14 @@ public class Match3Duels_Game implements Screen {
                 swappingActor.addAction(gemSwapAction);
                 
                 //Set new signatures for each 
-                int tempSig = signature;
-                ((GemActor)currentActor).setSignature(sigAdj);
-                ((GemActor)swappingActor).setSignature(tempSig);
+                int tempSig = currentActor.getSignature();
+                currentActor.setSignature(swappingActor.getSignature());
+                swappingActor.setSignature(tempSig);
                 
-                System.out.println("Passed in signature: " + signature);
+                boardGemArray[colAdj][rowAdj] = currentActor;
+                boardGemArray[col][row] = swappingActor;
+                
+                
             }
             
             break;

@@ -86,6 +86,5 @@ public class GemTouchListener extends InputListener {
     
     public void setSignature(int signature) {
         this.signature = signature;
-        System.out.println("New sig in listener" + signature);
     }
 }

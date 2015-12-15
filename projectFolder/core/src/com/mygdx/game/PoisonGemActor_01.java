@@ -51,4 +51,9 @@ public class PoisonGemActor_01 extends GemActor {
         signature = newSignature;
         listener.setSignature(signature);
     }
+    
+    @Override
+    public int getSignature() {
+        return signature;
+    }
 }

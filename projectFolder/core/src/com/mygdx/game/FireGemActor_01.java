@@ -18,7 +18,7 @@ public class FireGemActor_01 extends GemActor {
     public FireGemActor_01() {
         spriteXY = (Gdx.graphics.getWidth() / Match3Duels_Game.BOARD_ROWS) 
                 - Match3Duels_Game.SPRITE_PADDING;
-        signature = setSignature();
+        signature = super.setSignature();
         gemSprite = new Sprite(new Texture(Gdx.files.internal("gem_fire_01.png")));
         
         listener = new GemTouchListener(this, signature);
@@ -51,5 +51,10 @@ public class FireGemActor_01 extends GemActor {
     public void setSignature(int newSignature) {
         signature = newSignature;
         listener.setSignature(signature);
+    }
+    
+    @Override
+    public int getSignature() {
+        return signature;
     }
 }
