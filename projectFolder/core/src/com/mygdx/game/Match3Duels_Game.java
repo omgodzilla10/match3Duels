@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 
@@ -19,7 +20,10 @@ public class Match3Duels_Game implements Screen {
     static final int BOARD_ROWS = 6;
     
     /** The padding (in pixels) between gem sprites. */
-    static final int SPRITE_PADDING = 50;
+    static final int SPRITE_PADDING = 30;
+    
+    /** The global animation speed of each gem when moved. */
+    static final float GEM_MOVE_DURATION = 0.5f;
     
     /** The maximum number of gems allowed to be in use. */
     final int MAX_GEMS = 5;
@@ -53,6 +57,8 @@ public class Match3Duels_Game implements Screen {
         sViewport = new StretchViewport(screenWidth, screenHeight);
         gameStage = new Stage(sViewport);
         
+        Gdx.input.setInputProcessor(gameStage);
+        
         //Initialize the board arrays with random gems
         boardGemArray = new Actor[BOARD_ROWS][BOARD_ROWS];
         
@@ -74,8 +80,8 @@ public class Match3Duels_Game implements Screen {
                 }
                 //Set position of each gem and center.
                 boardGemArray[row][col].setPosition((row * (screenWidth / BOARD_ROWS))
-                        + (screenWidth / BOARD_ROWS / 4), (col * (screenWidth / BOARD_ROWS)) 
-                        + (screenWidth / BOARD_ROWS / 4));
+                        + (screenWidth / BOARD_ROWS / 6), (col * (screenWidth / BOARD_ROWS)) 
+                        + (screenWidth / BOARD_ROWS / 6));
                 
                 gameStage.addActor(boardGemArray[row][col]);
             }
