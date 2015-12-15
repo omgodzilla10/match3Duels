@@ -8,12 +8,18 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.utils.viewport.StretchViewport;
 
 public class Match3Duels_Game implements Screen {
     final Match3Duels_Main game;
     
     /** The number of rows on the board. */
-    final int BOARD_ROWS = 6;
+    static final int BOARD_ROWS = 6;
+    
+    /** The padding (in pixels) between gem sprites. */
+    static final int SPRITE_PADDING = 50;
     
     /** The maximum number of gems allowed to be in use. */
     final int MAX_GEMS = 5;
@@ -21,8 +27,7 @@ public class Match3Duels_Game implements Screen {
     private int screenWidth;
     private int screenHeight;
     
-    private OrthographicCamera camera;
-    
+    /*
     private Texture gemIcon_fire_01;
     private Texture gemIcon_lightning_01;
     private Texture gemIcon_poison_01;
@@ -32,15 +37,18 @@ public class Match3Duels_Game implements Screen {
     private Texture[] iconArray;
     private Texture[][] boardIconArray;
     
-    private Rectangle gem_fire_01;
-    private Rectangle gem_lightning_01;
-    private Rectangle gem_poison_01;
-    private Rectangle gem_shield_01;
-    private Rectangle gem_heal_01;
+    private Actor gem_fire_01;
+    private Actor gem_lightning_01;
+    private Actor gem_poison_01;
+    private Actor gem_shield_01;
+    private Actor gem_heal_01;*/
     
-    private Rectangle[] gemArray;
-    private Rectangle[][] boardGemArray;
+    private Actor[] gemArray;
+    private Actor[][] boardGemArray;
     
+    private Stage gameStage;
+    
+    private StretchViewport sViewport;
     
     public Match3Duels_Game(final Match3Duels_Main game) {
         this.game = game;
@@ -48,9 +56,10 @@ public class Match3Duels_Game implements Screen {
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
         
-        camera = new OrthographicCamera();
-        camera.setToOrtho(false, screenWidth, screenHeight);
+        sViewport = new StretchViewport(screenWidth, screenHeight);
+        gameStage = new Stage(sViewport);
         
+        /*
         //Create each gemIcon texture object.
         gemIcon_fire_01 = new Texture(Gdx.files.internal("gem_fire_01.png"));
         gemIcon_lightning_01 = new Texture(Gdx.files.internal("gem_lightning_01.png"));
@@ -66,60 +75,59 @@ public class Match3Duels_Game implements Screen {
         iconArray[3] = gemIcon_shield_01;
         iconArray[4] = gemIcon_heal_01;
         
-        //Create each gem rectangle object.
-        gem_fire_01 = new Rectangle();
-        gem_fire_01.width = screenWidth / (BOARD_ROWS + 3);
-        gem_fire_01.height = gem_fire_01.width;
-        
-        gem_lightning_01 = new Rectangle();
-        gem_lightning_01.width = screenWidth / (BOARD_ROWS + 3);
-        gem_lightning_01.height = gem_lightning_01.width;
-        
-        gem_poison_01 = new Rectangle();
-        gem_poison_01.width = screenWidth / (BOARD_ROWS + 3);
-        gem_poison_01.height = gem_poison_01.width;
-        
-        gem_shield_01 = new Rectangle();
-        gem_shield_01.width = screenWidth / (BOARD_ROWS + 3);
-        gem_shield_01.height = gem_shield_01.width;
-        
-        gem_heal_01 = new Rectangle();
-        gem_heal_01.width = screenWidth / (BOARD_ROWS + 3);
-        gem_heal_01.height = gem_heal_01.width;
+        //Create each gem actor.
+        gem_fire_01 = new FireGemActor_01();
+        gem_lightning_01 = new Actor();
+        gem_poison_01 = new Actor();
+        gem_shield_01 = new Actor();
+        gem_heal_01 = new Actor();
         
         //Assign each gem to the gemArray
-        gemArray = new Rectangle[MAX_GEMS];
+        gemArray = new Actor[MAX_GEMS];
         gemArray[0] = gem_fire_01;
         gemArray[1] = gem_lightning_01;
         gemArray[2] = gem_poison_01;
         gemArray[3] = gem_shield_01;
-        gemArray[4] = gem_heal_01;
+        gemArray[4] = gem_heal_01;*/
         
         //Initialize the board arrays with random gems
-        boardGemArray = new Rectangle[BOARD_ROWS][BOARD_ROWS];
-        boardIconArray = new Texture[BOARD_ROWS][BOARD_ROWS];
+        boardGemArray = new Actor[BOARD_ROWS][BOARD_ROWS];
         
         for(int row = 0; row < BOARD_ROWS; row++) {
             for(int col = 0; col < BOARD_ROWS; col++) {
                 int idx = MathUtils.random(0, 4);
                 
-                boardIconArray[row][col] = iconArray[idx];
-                boardGemArray[row][col] = new Rectangle(gemArray[idx]);
+                switch(idx) {
+                    case 0: boardGemArray[row][col] = new FireGemActor_01();
+                            break;
+                    case 1: boardGemArray[row][col] = new LightningGemActor_01();
+                            break;
+                    case 2: boardGemArray[row][col] = new PoisonGemActor_01();
+                            break;
+                    case 3: boardGemArray[row][col] = new ShieldGemActor_01();
+                            break;
+                    case 4: boardGemArray[row][col] = new HealGemActor_01();
+                            break;
+                }
+                //Set position of each gem and center.
+                boardGemArray[row][col].setPosition((row * (screenWidth / BOARD_ROWS))
+                        + (screenWidth / BOARD_ROWS / 4), (col * (screenWidth / BOARD_ROWS)) 
+                        + (screenWidth / BOARD_ROWS / 4));
                 
-                boardGemArray[row][col].x = (row * (screenWidth / BOARD_ROWS)) + ((screenWidth / BOARD_ROWS) / 4);
-                boardGemArray[row][col].y = (col * (screenWidth / BOARD_ROWS)) + ((screenWidth / BOARD_ROWS) / 4);
+                /*boardGemArray[row][col].setPosition((row * (screenWidth / BOARD_ROWS)), 
+                        (col * (screenWidth / BOARD_ROWS)));*/
+                
+                gameStage.addActor(boardGemArray[row][col]);
             }
         }
     }
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(153f / 255f, 204f / 255f, 255f / 255f, 1.0f);
+        Gdx.gl.glClearColor(1, 1, 1, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         
-        camera.update();
-        game.batch.setProjectionMatrix(camera.combined);
-        
+        /*
         game.batch.begin();
         
         //Render each gem in the board
@@ -131,13 +139,15 @@ public class Match3Duels_Game implements Screen {
             }
         }
         
-        game.batch.end();
+        game.batch.end();*/
+        
+        gameStage.act(delta);
+        gameStage.draw();
     }
 
     @Override
     public void resize(int width, int height) { 
-        camera.viewportHeight = height;
-        camera.viewportWidth = width;
+        gameStage.getViewport().update(width, height);
     }
     @Override
     public void pause() {}
