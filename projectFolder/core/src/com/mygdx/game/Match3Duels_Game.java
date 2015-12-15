@@ -2,6 +2,7 @@ package com.mygdx.game;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -36,7 +37,7 @@ public class Match3Duels_Game implements Screen {
     private int screenHeight;
     
     /** An array for each of the gem actors on the board. */
-    private static Actor[][] boardGemArray;
+    private static GemActor[][] boardGemArray;
     
     /** The stage on which the board and UI elements will appear. */
     private Stage gameStage;
@@ -70,7 +71,7 @@ public class Match3Duels_Game implements Screen {
         gemSwapAction = new MoveToAction();
         
         //Initialize the board arrays with random gems
-        boardGemArray = new Actor[BOARD_ROWS][BOARD_ROWS];
+        boardGemArray = new GemActor[BOARD_ROWS][BOARD_ROWS];
         
         for(int row = 0; row < BOARD_ROWS; row++) {
             for(int col = 0; col < BOARD_ROWS; col++) {
@@ -143,6 +144,7 @@ public class Match3Duels_Game implements Screen {
             
             boardGemArray[colSwap][rowSwap] = actor1;
             boardGemArray[col][row] = actor2;
+            checkMatches();
         }
     }
     
@@ -171,6 +173,7 @@ public class Match3Duels_Game implements Screen {
             
             boardGemArray[colSwap][rowSwap] = actor1;
             boardGemArray[col][row] = actor2;
+            checkMatches();
         }
     }
     
@@ -199,6 +202,7 @@ public class Match3Duels_Game implements Screen {
             
             boardGemArray[colSwap][rowSwap] = actor1;
             boardGemArray[col][row] = actor2;
+            checkMatches();
         }
     }
     
@@ -227,6 +231,7 @@ public class Match3Duels_Game implements Screen {
             
             boardGemArray[colSwap][rowSwap] = actor1;
             boardGemArray[col][row] = actor2;
+            checkMatches();
         }
     }
     
@@ -261,6 +266,43 @@ public class Match3Duels_Game implements Screen {
             col = 5;
         
         return col;
+    }
+    
+    private static void checkMatches() {
+        checkMatchesHorizontal();
+        //checkMatchesVertical();
+    }
+    
+    private static void checkMatchesHorizontal() {
+        int matchLevel;
+        
+        for(int col = 0; col < BOARD_ROWS; col++) {
+            
+            for(int row = 0; row < BOARD_ROWS; row++) {
+                
+                matchLevel = 1;
+                while(col != BOARD_ROWS - matchLevel && !boardGemArray[col][row].isMatched()
+                        && boardGemArray[col + (matchLevel - 1)][row].getType() 
+                        == boardGemArray[col + matchLevel][row].getType()) {
+                    matchLevel++;
+                    boardGemArray[col + (matchLevel - 1)][row].toggleMatched();
+                }
+                
+                if(matchLevel >= 3) {
+                    System.out.println(matchLevel);
+                    matchLevel = 0;
+                }
+                
+                if(boardGemArray[col][row].isMatched())
+                    boardGemArray[col][row].toggleMatched();
+            }
+        }
+    }
+    
+    private static void removeGems(int row, int col, int matchLevel) {
+        for(int i = 0; i < matchLevel; i++) {
+            boardGemArray[col + i][row].setPosition(0, 0);
+        }
     }
 
     @Override

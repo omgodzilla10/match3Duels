@@ -8,8 +8,11 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 
 public class ShieldGemActor_01 extends GemActor {
+    static final int GEM_TYPE = 3;
+    
     private int spriteXY;
     private int signature;
+    private boolean matched;
     private Sprite gemSprite;
     
     private GemTouchListener listener;
@@ -18,6 +21,7 @@ public class ShieldGemActor_01 extends GemActor {
         spriteXY = (Gdx.graphics.getWidth() / Match3Duels_Game.BOARD_ROWS) 
                 - Match3Duels_Game.SPRITE_PADDING;
         signature = super.setSignature();
+        matched = false;
         gemSprite = new Sprite(new Texture(Gdx.files.internal("gem_shield_01.png")));
         gemSprite.setSize(spriteXY, spriteXY);
         
@@ -55,5 +59,23 @@ public class ShieldGemActor_01 extends GemActor {
     @Override
     public int getSignature() {
         return signature;
+    }
+    
+    @Override
+    public int getType() {
+        return GEM_TYPE;
+    }
+    
+    @Override
+    public boolean isMatched(){
+        return matched;
+    }
+    
+    @Override
+    public void toggleMatched() {
+        if(matched)
+            matched = false;
+        else if(!matched)
+            matched = true;
     }
 }

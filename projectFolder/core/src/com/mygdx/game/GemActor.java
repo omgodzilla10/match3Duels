@@ -12,4 +12,7 @@ public abstract class GemActor extends Actor{
     
     public abstract void setSignature(int newSignature);
     public abstract int getSignature();
+    public abstract int getType();
+    public abstract boolean isMatched();
+    public abstract void toggleMatched();
 }
