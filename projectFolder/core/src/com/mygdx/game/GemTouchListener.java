@@ -3,8 +3,23 @@ package com.mygdx.game;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
 
 public class GemTouchListener extends InputListener {
+    final float MAX_ANG_QUAD_01 = 45;
+    final float MIN_ANG_QUAD_01 = 315;
+    final float MAX_ANG_QUAD_02 = 135;
+    final float MIN_ANG_QUAD_02 = 46;
+    final float MAX_ANG_QUAD_03 = 225;
+    final float MIN_ANG_QUAD_03 = 136;
+    final float MAX_ANG_QUAD_04 = 314;
+    final float MIN_ANG_QUAD_04 = 226;
+    
+    static final int DIR_RIGHT = 0;
+    static final int DIR_UP = 1;
+    static final int DIR_LEFT = 2;
+    static final int DIR_DOWN = 3;
+    
     private float originX;
     private float originY;
     
@@ -32,8 +47,37 @@ public class GemTouchListener extends InputListener {
         
         float offsetX;
         float offsetY;
+        float dragAngle;
         
+        //Find how much the gem was dragged by.
         offsetX = x - originX;
         offsetY = y - originY;
+        
+        //Find which direction the gem was dragged.
+        dragAngle = (float) Math.atan2(offsetY, offsetX);
+        dragAngle = (float) Math.toDegrees(dragAngle);
+        if(dragAngle < 0)
+            dragAngle += Math.toDegrees(2 * Math.PI);
+        
+        //Move right.
+        if(dragAngle <= MAX_ANG_QUAD_01 || dragAngle >= MIN_ANG_QUAD_01) {
+            System.out.println("Move right!"); //Debug
+            Match3Duels_Game.moveGem(DIR_RIGHT);
+        }
+        //Move up.
+        else if(dragAngle <= MAX_ANG_QUAD_02 && dragAngle >= MIN_ANG_QUAD_02) {
+            System.out.println("Move up!");
+            Match3Duels_Game.moveGem(DIR_UP);
+        }
+        //Move left.
+        else if(dragAngle <= MAX_ANG_QUAD_03 && dragAngle >= MIN_ANG_QUAD_03) {
+            System.out.println("Move left!");
+            Match3Duels_Game.moveGem(DIR_LEFT);
+        }
+        //Move down.
+        else if(dragAngle <= MAX_ANG_QUAD_04 && dragAngle >= MIN_ANG_QUAD_04) {
+            System.out.println("Move down!");
+            Match3Duels_Game.moveGem(DIR_DOWN);
+        }
     }
 }

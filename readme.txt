@@ -25,6 +25,14 @@ All of the gems the user can obtain will be in the following categories:
 
 The user will receive XP for every match they play. The amount of XP they receive is doubled if they win the match. Everytime the player levels up, they will receive a choice of three unknown gems, which are each labelled with their spell type but not their actual attributes. When the player selects one of the three gems, the other two are removed, and the selected gem and it's spell attributes are revealed. As the user gains more and more levels, the XP required to reach the next level will be increased.
 
+Alternate Gamemode
+Later on in development, a separate game mode may be available. In this mode, each player will receive a fixed amount of moves they can make on the match-3 board. When all of their moves are finished, the total damage will be tallied up and will be dealt to the other player. Some considerations have to be made:
+	- A shield spell only defends against whichever spell is being currently cast by the enemy. So, if 	  Player 1's third spell is a shield and Player 2's third spell is fire, Player 1 will be protected from
+	  the fire. However, Player 1's shield will not protect them against Player 2's fourth spell (Unless 		          Player 1's fourth spell is another shield.)
+	- Each gem cast by each opponent will be displayed on screen for both users to see while they are making
+	  their moves.
+	- Each player will have a time limit to cast a spell (5-10 seconds).
+
 Target Platform / Hardware
 
 We'll be specifically targetting Android devices. The minimum specs have not been determined, but will likely be low, because the game is only 2d and contains minimal visual effects.

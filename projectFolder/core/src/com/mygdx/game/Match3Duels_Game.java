@@ -87,6 +87,10 @@ public class Match3Duels_Game implements Screen {
             }
         }
     }
+    
+    public static void moveGem(int dir) {
+        
+    }
 
     @Override
     public void render(float delta) {
@@ -111,5 +115,4 @@ public class Match3Duels_Game implements Screen {
     public void hide() {}
     @Override
     public void dispose() {}
-
 }
