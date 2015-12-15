@@ -99,56 +99,152 @@ public class Match3Duels_Game implements Screen {
     }
     
     public static void moveGem(int dir, int signature) {
-        GemActor currentActor;
-        GemActor swappingActor;
-        
-        int col = findCol(signature);
-        int row = signature - (col * BOARD_ROWS);
-        
-        int colAdj;
-        int rowAdj;
-        
-        currentActor = (GemActor) boardGemArray[col][row];
-        
         switch (dir) {
         case GemTouchListener.DIR_RIGHT: 
-            if(col != 5) {
-                colAdj = col + 1;
-                rowAdj = row;
-                
-                swappingActor = (GemActor) boardGemArray[colAdj][rowAdj];
-                
-                System.out.println("Passed in: " + signature);
-                
-                gemMoveAction.setPosition(swappingActor.getX(), swappingActor.getY());
-                gemMoveAction.setDuration(GEM_MOVE_DURATION);
-                
-                gemSwapAction.setPosition(currentActor.getX(), currentActor.getY());
-                gemSwapAction.setDuration(GEM_MOVE_DURATION);
-                
-                gemMoveAction.reset();
-                gemSwapAction.reset();
-                currentActor.addAction(gemMoveAction);
-                swappingActor.addAction(gemSwapAction);
-                
-                //Set new signatures for each 
-                int tempSig = currentActor.getSignature();
-                currentActor.setSignature(swappingActor.getSignature());
-                swappingActor.setSignature(tempSig);
-                
-                boardGemArray[colAdj][rowAdj] = currentActor;
-                boardGemArray[col][row] = swappingActor;
-                
-                
-            }
-            
+            moveGemRight(signature);
             break;
+            
         case GemTouchListener.DIR_UP:
+            moveGemUp(signature);
+            break;
+            
+        case GemTouchListener.DIR_LEFT:
+            moveGemLeft(signature);
+            break;
+            
+        case GemTouchListener.DIR_DOWN:
+            moveGemDown(signature);
             break;
         }
     }
     
-    public static int findCol(int signature) {
+    private static void moveGemRight(int signature) {
+        int col = findCol(signature);
+        int row = signature - (col * BOARD_ROWS);
+        
+        GemActor actor1;
+        GemActor actor2;
+        
+        if(col != BOARD_ROWS - 1) {
+            int colSwap;
+            int rowSwap;
+            
+            colSwap = col + 1;
+            rowSwap = row;
+            
+            actor1 = (GemActor) boardGemArray[col][row];
+            actor2 = (GemActor) boardGemArray[colSwap][rowSwap];
+            swapGems(actor1, actor2);
+            
+            //Set new signatures for each 
+            int tempSig = actor1.getSignature();
+            actor1.setSignature(actor2.getSignature());
+            actor2.setSignature(tempSig);
+            
+            boardGemArray[colSwap][rowSwap] = actor1;
+            boardGemArray[col][row] = actor2;
+        }
+    }
+    
+    private static void moveGemUp(int signature) {
+        int col = findCol(signature);
+        int row = signature - (col * BOARD_ROWS);
+        
+        GemActor actor1;
+        GemActor actor2;
+        
+        if(row != BOARD_ROWS - 1) {
+            int colSwap;
+            int rowSwap;
+            
+            colSwap = col;
+            rowSwap = row + 1;
+            
+            actor1 = (GemActor) boardGemArray[col][row];
+            actor2 = (GemActor) boardGemArray[colSwap][rowSwap];
+            swapGems(actor1, actor2);
+            
+            //Set new signatures for each 
+            int tempSig = actor1.getSignature();
+            actor1.setSignature(actor2.getSignature());
+            actor2.setSignature(tempSig);
+            
+            boardGemArray[colSwap][rowSwap] = actor1;
+            boardGemArray[col][row] = actor2;
+        }
+    }
+    
+    private static void moveGemLeft(int signature) {
+        int col = findCol(signature);
+        int row = signature - (col * BOARD_ROWS);
+        
+        GemActor actor1;
+        GemActor actor2;
+        
+        if(col != 0) {
+            int colSwap;
+            int rowSwap;
+            
+            colSwap = col - 1;
+            rowSwap = row;
+            
+            actor1 = (GemActor) boardGemArray[col][row];
+            actor2 = (GemActor) boardGemArray[colSwap][rowSwap];
+            swapGems(actor1, actor2);
+            
+            //Set new signatures for each 
+            int tempSig = actor1.getSignature();
+            actor1.setSignature(actor2.getSignature());
+            actor2.setSignature(tempSig);
+            
+            boardGemArray[colSwap][rowSwap] = actor1;
+            boardGemArray[col][row] = actor2;
+        }
+    }
+    
+    private static void moveGemDown(int signature) {
+        int col = findCol(signature);
+        int row = signature - (col * BOARD_ROWS);
+        
+        GemActor actor1;
+        GemActor actor2;
+        
+        if(row != 0) {
+            int colSwap;
+            int rowSwap;
+            
+            colSwap = col;
+            rowSwap = row - 1;
+            
+            actor1 = (GemActor) boardGemArray[col][row];
+            actor2 = (GemActor) boardGemArray[colSwap][rowSwap];
+            swapGems(actor1, actor2);
+            
+            //Set new signatures for each 
+            int tempSig = actor1.getSignature();
+            actor1.setSignature(actor2.getSignature());
+            actor2.setSignature(tempSig);
+            
+            boardGemArray[colSwap][rowSwap] = actor1;
+            boardGemArray[col][row] = actor2;
+        }
+    }
+    
+    private static void swapGems(GemActor actor1, GemActor actor2) {
+        gemMoveAction.setPosition(actor2.getX(), actor2.getY());
+        gemMoveAction.setDuration(GEM_MOVE_DURATION);
+        
+        gemSwapAction.setPosition(actor1.getX(), actor1.getY());
+        gemSwapAction.setDuration(GEM_MOVE_DURATION);
+        
+        gemMoveAction.reset();
+        gemSwapAction.reset();
+        
+        actor1.addAction(gemMoveAction);
+        actor2.addAction(gemSwapAction);
+    }
+    
+    private static int findCol(int signature) {
         int col = 0;
         
         if(signature < BOARD_ROWS)
