@@ -13,6 +13,7 @@ public class HealGemActor_01 extends GemActor {
     private int spriteXY;
     private int signature;
     private boolean matched;
+    private boolean invisible;
     private Sprite gemSprite;
     
     private GemTouchListener listener;
@@ -22,6 +23,7 @@ public class HealGemActor_01 extends GemActor {
                 - Match3Duels_Game.SPRITE_PADDING;
         signature = super.setSignature();
         matched = false;
+        invisible = false;
         gemSprite = new Sprite(new Texture(Gdx.files.internal("gem_heal_01.png")));
         gemSprite.setSize(spriteXY, spriteXY);
         
@@ -82,5 +84,18 @@ public class HealGemActor_01 extends GemActor {
     @Override
     public void setMatched(boolean b){
         matched = b;
+    }
+    
+    @Override
+    public void setInvisible(boolean b) {
+        invisible = b;
+        
+        if(b)
+            gemSprite.setTexture(new Texture(Gdx.files.internal("temp_invisible.png")));
+    }
+    
+    @Override
+    public boolean isInvisible() {
+        return invisible;
     }
 }

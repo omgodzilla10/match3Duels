@@ -103,6 +103,7 @@ public class Match3Duels_Game implements Screen {
                         + (screenWidth / BOARD_ROWS / 6));
                 
                 gameStage.addActor(boardGemArray[row][col]);
+                gameStage.setDebugAll(true);
             }
         }
         
@@ -240,6 +241,8 @@ public class Match3Duels_Game implements Screen {
             
             boardGemArray[colSwap][rowSwap] = actor1;
             boardGemArray[col][row] = actor2;
+            
+            boardGemArray[col][row].setColor(Color.BLACK);
         }
     }
     
@@ -321,8 +324,8 @@ public class Match3Duels_Game implements Screen {
                 while(col != BOARD_ROWS - matchLevel && !boardGemArray[col][row].isMatched()
                         && boardGemArray[col + (matchLevel - 1)][row].getType() 
                         == boardGemArray[col + matchLevel][row].getType()
-                        && boardGemArray[col + (matchLevel - 1)][row].isVisible()
-                        && boardGemArray[col + matchLevel][row].isVisible()) {
+                        && !boardGemArray[col + (matchLevel - 1)][row].isInvisible()
+                        && !boardGemArray[col + matchLevel][row].isInvisible()) {
                     
                     matchLevel++;
                     boardGemArray[col + (matchLevel - 1)][row].toggleMatched();
@@ -347,8 +350,8 @@ public class Match3Duels_Game implements Screen {
                 while(row != BOARD_ROWS - matchLevel && !boardGemArray[col][row].isMatched()
                         && boardGemArray[col][row + (matchLevel - 1)].getType() 
                         == boardGemArray[col][row + matchLevel].getType()
-                        && boardGemArray[col][row + (matchLevel - 1)].isVisible()
-                        && boardGemArray[col][row + matchLevel].isVisible()) {
+                        && !boardGemArray[col][row + (matchLevel - 1)].isInvisible()
+                        && !boardGemArray[col][row + matchLevel].isInvisible()) {
                             
                     matchLevel++;
                     boardGemArray[col][row + (matchLevel - 1)].toggleMatched();
@@ -370,14 +373,14 @@ public class Match3Duels_Game implements Screen {
     private static void hideMatchHorizontal(int col, int row, int matchLevel) {
         //For each gem in the match
         for(int i = 0; i < matchLevel; i++) {
-            boardGemArray[col + i][row].setVisible(false);
+            boardGemArray[col + i][row].setInvisible(true);
         }
     }
     
     private static void hideMatchVertical(int col, int row, int matchLevel) {
         //For each gem in the match
         for(int i = 0; i < matchLevel; i++) {
-            boardGemArray[col][row + i].setVisible(false);
+            boardGemArray[col][row + i].setInvisible(true);
         }
     }
     
@@ -388,7 +391,7 @@ public class Match3Duels_Game implements Screen {
         
         for(int col = 0; col < BOARD_ROWS; col++) {
             for(int row = 0; row < BOARD_ROWS; row++) {
-                if(!boardGemArray[col][row].isVisible() 
+                if(boardGemArray[col][row].isInvisible() 
                         && row < BOARD_ROWS - 1) {
                     
                 }
