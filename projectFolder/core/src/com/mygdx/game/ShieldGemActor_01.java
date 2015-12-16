@@ -78,4 +78,9 @@ public class ShieldGemActor_01 extends GemActor {
         else if(!matched)
             matched = true;
     }
+    
+    @Override
+    public void setMatched(boolean b){
+        matched = b;
+    }
 }

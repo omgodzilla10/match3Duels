@@ -15,4 +15,5 @@ public abstract class GemActor extends Actor{
     public abstract int getType();
     public abstract boolean isMatched();
     public abstract void toggleMatched();
+    public abstract void setMatched(boolean b);
 }

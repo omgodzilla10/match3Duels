@@ -39,6 +39,7 @@ public class GemTouchListener extends InputListener {
     @Override
     public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
         System.out.println("touch down!"); //Debug
+        System.out.println(signature);
         
         originX = x;
         originY = y;

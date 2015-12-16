@@ -36,6 +36,9 @@ public class Match3Duels_Game implements Screen {
     /** The height of the screen (at execution). */
     private int screenHeight;
     
+    /** Used by the gemFall method to see if the first gem has fallen yet. */
+    private static boolean firstGem;
+    
     /** Whether there is currently a match on the stage. */
     private static boolean gemsMatched;
     
@@ -43,7 +46,7 @@ public class Match3Duels_Game implements Screen {
     private static GemActor[][] boardGemArray;
     
     /** The stage on which the board and UI elements will appear. */
-    private Stage gameStage;
+    private static Stage gameStage;
     
     /** The stage's viewport. */
     private StretchViewport sViewport;
@@ -62,6 +65,7 @@ public class Match3Duels_Game implements Screen {
     public Match3Duels_Game(final Match3Duels_Main game) {
         this.game = game;
         gemsMatched = false;
+        firstGem = false;
         
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
@@ -186,6 +190,31 @@ public class Match3Duels_Game implements Screen {
         }
     }
     
+    private static void moveGemUp(int col, int row) {
+        GemActor actor1;
+        GemActor actor2;
+        
+        if(row != BOARD_ROWS - 1) {
+            int colSwap;
+            int rowSwap;
+            
+            colSwap = col;
+            rowSwap = row + 1;
+            
+            actor1 = (GemActor) boardGemArray[col][row];
+            actor2 = (GemActor) boardGemArray[colSwap][rowSwap];
+            swapGems(actor1, actor2);
+            
+            //Set new signatures for each 
+            int tempSig = actor1.getSignature();
+            actor1.setSignature(actor2.getSignature());
+            actor2.setSignature(tempSig);
+            
+            boardGemArray[colSwap][rowSwap] = actor1;
+            boardGemArray[col][row] = actor2;
+        }
+    }
+    
     private static void moveGemLeft(int signature) {
         int col = findCol(signature);
         int row = signature - (col * BOARD_ROWS);
@@ -278,6 +307,7 @@ public class Match3Duels_Game implements Screen {
     private static void checkMatches() {
         checkMatchesHorizontal();
         checkMatchesVertical();
+        collapseGems();
     }
     
     private static void checkMatchesHorizontal() {
@@ -290,13 +320,43 @@ public class Match3Duels_Game implements Screen {
                 matchLevel = 1;
                 while(col != BOARD_ROWS - matchLevel && !boardGemArray[col][row].isMatched()
                         && boardGemArray[col + (matchLevel - 1)][row].getType() 
-                        == boardGemArray[col + matchLevel][row].getType()) {
+                        == boardGemArray[col + matchLevel][row].getType()
+                        && boardGemArray[col + (matchLevel - 1)][row].isVisible()
+                        && boardGemArray[col + matchLevel][row].isVisible()) {
+                    
                     matchLevel++;
                     boardGemArray[col + (matchLevel - 1)][row].toggleMatched();
                 }
                 
                 if(matchLevel >= 3) {
                     System.out.println("Horizontal: " + matchLevel);
+                    hideMatchHorizontal(col, row, matchLevel);
+                    gemsMatched = true;
+                    matchLevel = 0;
+                }
+            }
+        }
+    }
+    
+    private static void checkMatchesVertical() {
+        int matchLevel;
+        
+        for(int col = 0; col < BOARD_ROWS; col++) {
+            for(int row = 0; row < BOARD_ROWS; row++) {
+                matchLevel = 1;
+                while(row != BOARD_ROWS - matchLevel && !boardGemArray[col][row].isMatched()
+                        && boardGemArray[col][row + (matchLevel - 1)].getType() 
+                        == boardGemArray[col][row + matchLevel].getType()
+                        && boardGemArray[col][row + (matchLevel - 1)].isVisible()
+                        && boardGemArray[col][row + matchLevel].isVisible()) {
+                            
+                    matchLevel++;
+                    boardGemArray[col][row + (matchLevel - 1)].toggleMatched();
+                }
+                
+                if(matchLevel >= 3) {
+                    System.out.println("Vertical: " + matchLevel);
+                    hideMatchVertical(col, row, matchLevel);
                     matchLevel = 0;
                     gemsMatched = true;
                 }
@@ -307,31 +367,58 @@ public class Match3Duels_Game implements Screen {
         }
     }
     
-    private static void checkMatchesVertical() {
-        int matchLevel;
+    private static void hideMatchHorizontal(int col, int row, int matchLevel) {
+        //For each gem in the match
+        for(int i = 0; i < matchLevel; i++) {
+            boardGemArray[col + i][row].setVisible(false);
+        }
+    }
+    
+    private static void hideMatchVertical(int col, int row, int matchLevel) {
+        //For each gem in the match
+        for(int i = 0; i < matchLevel; i++) {
+            boardGemArray[col][row + i].setVisible(false);
+        }
+    }
+    
+    private static void collapseGems() {
+        GemActor aboveActor;
+        int currentRow;
+        int tempSig;
         
         for(int col = 0; col < BOARD_ROWS; col++) {
-            
             for(int row = 0; row < BOARD_ROWS; row++) {
-                
-                matchLevel = 1;
-                while(row != BOARD_ROWS - matchLevel && !boardGemArray[col][row].isMatched()
-                        && boardGemArray[col][row + (matchLevel - 1)].getType() 
-                        == boardGemArray[col][row + matchLevel].getType()) {
-                    matchLevel++;
-                    boardGemArray[col][row + (matchLevel - 1)].toggleMatched();
+                if(!boardGemArray[col][row].isVisible() 
+                        && row < BOARD_ROWS - 1) {
+                    
                 }
-                
-                if(matchLevel >= 3) {
-                    System.out.println("Vertical: " + matchLevel);
-                    matchLevel = 0;
-                    gemsMatched = true;
-                }
-                
-                if(boardGemArray[col][row].isMatched())
-                    boardGemArray[col][row].toggleMatched();
             }
         }
+    }
+    
+    private static void newGem(int col, int row) {
+        int idx = MathUtils.random(0, 4);
+        
+        switch(idx) {
+            case 0: boardGemArray[col][row] = new FireGemActor_01();
+                    break;
+            case 1: boardGemArray[col][row] = new LightningGemActor_01();
+                    break;
+            case 2: boardGemArray[col][row] = new PoisonGemActor_01();
+                    break;
+            case 3: boardGemArray[col][row] = new ShieldGemActor_01();
+                    break;
+            case 4: boardGemArray[col][row] = new HealGemActor_01();
+                    break;
+        }
+        
+        boardGemArray[col][row].setPosition((row * (Gdx.graphics.getWidth() / BOARD_ROWS))
+                + (Gdx.graphics.getWidth() / BOARD_ROWS / 6), (col * (Gdx.graphics.getWidth() / BOARD_ROWS)) 
+                + (Gdx.graphics.getWidth() / BOARD_ROWS / 6));
+        
+        boardGemArray[col][row].setSignature((BOARD_ROWS - 1) * col);
+        
+        gameStage.addActor(boardGemArray[col][row]);
     }
 
     @Override
