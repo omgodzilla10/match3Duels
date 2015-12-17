@@ -23,17 +23,17 @@ public class Match3Duels_Game implements Screen {
     final Match3Duels_Main game;
     
     /** The number of rows on the board. */
-    static final int BOARD_ROWS = 6;
+    static final int BOARD_ROWS = 7;
     
     /** The max number of moves a player can make before they have to
      * take a potion. */
-    static final int MAX_MOVES = 10;
+    static final int MAX_MOVES = 6;
     
     /** The number of potions a player starts with. */
     static final int MAX_POTS = 3;
     
     /** The padding (in pixels) between gem sprites. */
-    static final int SPRITE_PADDING = 30;
+    static final int SPRITE_PADDING = 15;
     
     /** The global animation speed of each gem when moved. */
     final static float GEM_MOVE_DURATION = 0.15f;
@@ -53,8 +53,14 @@ public class Match3Duels_Game implements Screen {
     /** The number of potions the player currently has. */
     private static int potCount;
     
+    /** Used to check for matches on the first frame. */
+    private static boolean firstFrame;
+    
     /** An array for each of the gem actors on the board. */
     private static GemActor[][] boardGemArray;
+    
+    /** The actor for the potion count UI element. */
+    private static Actor potionCounter;
     
     /** The stage on which the board and UI elements will appear. */
     private static Stage gameStage;
@@ -77,6 +83,7 @@ public class Match3Duels_Game implements Screen {
         this.game = game;
         
         movesMade = 0;
+        firstFrame = true;
         potCount = MAX_POTS;
         
         screenWidth = Gdx.graphics.getWidth();
@@ -115,12 +122,13 @@ public class Match3Duels_Game implements Screen {
                         + (screenWidth / BOARD_ROWS / 6));
                 
                 gameStage.addActor(boardGemArray[row][col]);
-                gameStage.setDebugAll(true);
             }
         }
         
-        //Initial check for matches
-        checkMatches();
+        potionCounter = new PotionCounter();
+        gameStage.addActor(potionCounter);
+        
+        
     }
     
     public static void moveGem(int dir, int signature) {
@@ -157,6 +165,9 @@ public class Match3Duels_Game implements Screen {
         int col = findCol(signature);
         int row = signature - (col * BOARD_ROWS);
         
+        System.out.println("Col: " + col);
+        System.out.println("Row: " + row);
+        
         GemActor actor1;
         GemActor actor2;
         
@@ -185,31 +196,6 @@ public class Match3Duels_Game implements Screen {
         int col = findCol(signature);
         int row = signature - (col * BOARD_ROWS);
         
-        GemActor actor1;
-        GemActor actor2;
-        
-        if(row != BOARD_ROWS - 1) {
-            int colSwap;
-            int rowSwap;
-            
-            colSwap = col;
-            rowSwap = row + 1;
-            
-            actor1 = (GemActor) boardGemArray[col][row];
-            actor2 = (GemActor) boardGemArray[colSwap][rowSwap];
-            swapGems(actor1, actor2);
-            
-            //Set new signatures for each 
-            int tempSig = actor1.getSignature();
-            actor1.setSignature(actor2.getSignature());
-            actor2.setSignature(tempSig);
-            
-            boardGemArray[colSwap][rowSwap] = actor1;
-            boardGemArray[col][row] = actor2;
-        }
-    }
-    
-    private static void moveGemUp(int col, int row) {
         GemActor actor1;
         GemActor actor2;
         
@@ -292,31 +278,6 @@ public class Match3Duels_Game implements Screen {
         }
     }
     
-    private static void moveGemDown(int col, int row) {
-        GemActor actor1;
-        GemActor actor2;
-        
-        if(row != 0) {
-            int colSwap;
-            int rowSwap;
-            
-            colSwap = col;
-            rowSwap = row - 1;
-            
-            actor1 = (GemActor) boardGemArray[col][row];
-            actor2 = (GemActor) boardGemArray[colSwap][rowSwap];
-            swapGems(actor1, actor2);
-            
-            //Set new signatures for each 
-            int tempSig = actor1.getSignature();
-            actor1.setSignature(actor2.getSignature());
-            actor2.setSignature(tempSig);
-            
-            boardGemArray[colSwap][rowSwap] = actor1;
-            boardGemArray[col][row] = actor2;
-        }
-    }
-    
     private static void swapGems(GemActor actor1, GemActor actor2) {
         gemMoveAction.setPosition(actor2.getX(), actor2.getY());
         gemMoveAction.setDuration(GEM_MOVE_DURATION);
@@ -346,6 +307,8 @@ public class Match3Duels_Game implements Screen {
             col = 4;
         else if(signature < (6 * BOARD_ROWS))
             col = 5;
+        else if(signature < (7 * BOARD_ROWS))
+            col = 6;
         
         return col;
     }
@@ -445,6 +408,8 @@ public class Match3Duels_Game implements Screen {
                 }
             }
         }
+        
+        checkMatches();
     }
     
     private static GemActor newGem() {
@@ -465,11 +430,18 @@ public class Match3Duels_Game implements Screen {
         Gdx.gl.glClearColor(1, 1, 1, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         
+        //Initial check for matches
+        if(firstFrame) {
+            checkMatches();
+            firstFrame = false;
+        }
+        
         if(Gdx.input.isKeyJustPressed(Keys.SPACE)) {
             if(potCount > 0) {
                 movesMade = 0;
                 potCount--;
                 fillEmptySlots();
+                ((PotionCounter) potionCounter).setNewSprite(potCount);
             }
         }
         
