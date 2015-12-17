@@ -40,7 +40,7 @@ public class Match3Duels_Game implements Screen {
     static final int SPRITE_PADDING = 15;
     
     /** The speed that the fire spell animation moves along the y axis. */
-    static final int FIRE_SPELL_SPEED = 500;
+    static final int FIRE_SPELL_SPEED = 400;
     
     /** The time, in seconds, between frames in an animation. */
     static final float ANIM_DURATION = 0.1f;
@@ -74,9 +74,6 @@ public class Match3Duels_Game implements Screen {
     
     /** The y coordinate where all spell effect animations begin. */
     private static int animStart; //MAKE THIS A CONSTANT WHEN UI IS IMPLEMENTED.
-    
-    /** Used to check for matches on the first frame. */
-    private static boolean firstFrame;
     
     /** An array for each of the gem actors on the board. */
     private static GemActor[][] boardGemArray;
@@ -132,7 +129,6 @@ public class Match3Duels_Game implements Screen {
         
         movesMade = 0;
         elapsedTime = 0;
-        firstFrame = true;
         potCount = MAX_POTS;
         
         fireAnimFired = false;
@@ -198,6 +194,8 @@ public class Match3Duels_Game implements Screen {
         fireVector = new Vector2();
         animMoveSpeed = new Vector2();
         spriteBatch = new SpriteBatch();
+        
+        checkMatches();
     }
     
     @Override
@@ -206,12 +204,6 @@ public class Match3Duels_Game implements Screen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         
         elapsedTime += delta;
-        
-        //Initial check for matches
-        if(firstFrame) {
-            checkMatches();
-            firstFrame = false;
-        }
         
         if(Gdx.input.isKeyJustPressed(Keys.SPACE)) {
             if(potCount > 0) {
@@ -485,25 +477,20 @@ public class Match3Duels_Game implements Screen {
         
         for(int col = 0; col < BOARD_ROWS; col++) {
             for(int row = 0; row < BOARD_ROWS; row++) {
-                matchLevel = 1;
-                while(row != BOARD_ROWS - matchLevel && !boardGemArray[col][row].isMatched()
-                        && boardGemArray[col][row + (matchLevel - 1)].getType() 
-                        == boardGemArray[col][row + matchLevel].getType()
-                        && !boardGemArray[col][row + (matchLevel - 1)].isInvisible()
-                        && !boardGemArray[col][row + matchLevel].isInvisible()) {
-                            
-                    matchLevel++;
-                    boardGemArray[col][row + (matchLevel - 1)].toggleMatched();
+                if(!boardGemArray[col][row].isInvisible()) {
+                    matchLevel = 1;
+                    
+                    while(row < BOARD_ROWS - matchLevel
+                            && boardGemArray[col][row + matchLevel].getType()
+                            == boardGemArray[col][row].getType()
+                            && !boardGemArray[col][row + matchLevel].isInvisible()) {
+                        matchLevel++;
+                    }
+                    
+                    if(matchLevel >= 3) {
+                        hideMatchVertical(col, row, matchLevel);
+                    }
                 }
-                
-                if(matchLevel >= 3) {
-                    System.out.println("Vertical: " + matchLevel);
-                    hideMatchVertical(col, row, matchLevel);
-                    matchLevel = 0;
-                }
-                
-                if(boardGemArray[col][row].isMatched())
-                    boardGemArray[col][row].toggleMatched();
             }
         }
     }

@@ -41,6 +41,8 @@ public class GemTouchListener extends InputListener {
         System.out.println("touch down!"); //Debug
         System.out.println(signature);
         
+        System.out.println("Type: " + ((GemActor)actor).getType());
+        
         originX = x;
         originY = y;
         return true;
