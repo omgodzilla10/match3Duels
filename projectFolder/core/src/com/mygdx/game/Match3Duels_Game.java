@@ -9,9 +9,13 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.Animation.PlayMode;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -35,6 +39,12 @@ public class Match3Duels_Game implements Screen {
     /** The padding (in pixels) between gem sprites. */
     static final int SPRITE_PADDING = 15;
     
+    /** The speed that the fire spell animation moves along the y axis. */
+    static final int FIRE_SPELL_SPEED = 500;
+    
+    /** The time, in seconds, between frames in an animation. */
+    static final float ANIM_DURATION = 0.1f;
+    
     /** The global animation speed of each gem when moved. */
     final static float GEM_MOVE_DURATION = 0.15f;
     
@@ -47,11 +57,23 @@ public class Match3Duels_Game implements Screen {
     /** The height of the screen (at execution). */
     private int screenHeight;
     
+    /** Whether the fireGem has been fired or not. */
+    private static boolean fireAnimFired;
+    
+    /** The elapsed time since game execution. */
+    private float elapsedTime;
+    
     /** The amount of moves the player has made. */
     private static int movesMade;
     
     /** The number of potions the player currently has. */
     private static int potCount;
+    
+    /** The y coordinate where all spell effect animations stop. */
+    private int animThreshold;
+    
+    /** The y coordinate where all spell effect animations begin. */
+    private static int animStart; //MAKE THIS A CONSTANT WHEN UI IS IMPLEMENTED.
     
     /** Used to check for matches on the first frame. */
     private static boolean firstFrame;
@@ -74,6 +96,32 @@ public class Match3Duels_Game implements Screen {
     /** Used to animate the gem being swapped with the moved gem. */
     private static MoveToAction gemSwapAction;
     
+    /** The animation for the fire gem. */
+    private static Animation fireAnim;
+    
+    /** The texture for the fire animation. */
+    private Texture fireAnimTex;
+    
+    /** The TextureRegion for the fire animation. */
+    private TextureRegion[] fireTexRegion;
+    
+    /** A Vector2 for the fire animation's coordinates. */
+    private static Vector2 fireVector;
+    
+    /** The speed an animation will move along the X and Y axis. */
+    private static Vector2 animMoveSpeed;
+    
+    /** A spritebatch, for elements not drawn using scene2D. */
+    private SpriteBatch spriteBatch;
+    
+    private enum SpellType {
+        FIRE,
+        LIGHTNING,
+        POISON,
+        SHIELD,
+        HEAL;
+    }
+    
     /** The constructor. 
      * 
      * @param game - Passed in when the game is launched 
@@ -83,8 +131,11 @@ public class Match3Duels_Game implements Screen {
         this.game = game;
         
         movesMade = 0;
+        elapsedTime = 0;
         firstFrame = true;
         potCount = MAX_POTS;
+        
+        fireAnimFired = false;
         
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
@@ -119,7 +170,7 @@ public class Match3Duels_Game implements Screen {
                 //Set position of each gem and center.
                 boardGemArray[row][col].setPosition((row * (screenWidth / BOARD_ROWS))
                         + (screenWidth / BOARD_ROWS / 6), (col * (screenWidth / BOARD_ROWS)) 
-                        + (screenWidth / BOARD_ROWS / 6));
+                        + (screenWidth / BOARD_ROWS / 6) + 50);
                 
                 gameStage.addActor(boardGemArray[row][col]);
             }
@@ -128,7 +179,91 @@ public class Match3Duels_Game implements Screen {
         potionCounter = new PotionCounter();
         gameStage.addActor(potionCounter);
         
+        fireAnimTex = new Texture(Gdx.files.internal("gem_fire_anim.png"));
+        fireTexRegion = new TextureRegion[6];
+        TextureRegion[][] fireTexRegionTemp = new TextureRegion[1][6];
+
+        fireTexRegionTemp = TextureRegion.split(fireAnimTex, 64, 64);
+        for(int i = 0; i < fireTexRegion.length; i++) {
+            fireTexRegion[i] = fireTexRegionTemp[0][i];
+        }
         
+        animThreshold = 3 * (screenHeight / 4);
+        animStart = screenHeight / 2;
+        
+        fireAnim = new Animation(ANIM_DURATION, fireTexRegion);
+        fireAnim.setPlayMode(PlayMode.LOOP);
+        
+        fireAnimFired = false;
+        fireVector = new Vector2();
+        animMoveSpeed = new Vector2();
+        spriteBatch = new SpriteBatch();
+    }
+    
+    @Override
+    public void render(float delta) {
+        Gdx.gl.glClearColor(1, 1, 1, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        
+        elapsedTime += delta;
+        
+        //Initial check for matches
+        if(firstFrame) {
+            checkMatches();
+            firstFrame = false;
+        }
+        
+        if(Gdx.input.isKeyJustPressed(Keys.SPACE)) {
+            if(potCount > 0) {
+                movesMade = 0;
+                potCount--;
+                debugResetAllGems();
+                checkMatches();
+                ((PotionCounter) potionCounter).setNewSprite(potCount);
+            }
+        }
+        
+        if(Gdx.input.isKeyJustPressed(Keys.CONTROL_LEFT)) {
+            movesMade = 0;
+            debugResetAllGems();
+        }
+        
+        if(Gdx.input.isKeyJustPressed(Keys.SHIFT_LEFT))
+            startAnimation(SpellType.FIRE);
+        
+        gameStage.act(delta);
+        gameStage.draw();
+        
+        spriteBatch.begin();
+        
+        if(fireAnimFired) {
+            fireVector.x += animMoveSpeed.x * delta;
+            fireVector.y += animMoveSpeed.y * delta;
+            
+            spriteBatch.draw(fireAnim.getKeyFrame(elapsedTime, true), fireVector.x, fireVector.y);
+            
+            if(fireVector.y > animThreshold) {
+                fireAnimFired = false;
+            }
+        }
+        
+        spriteBatch.end();
+    }
+    
+    private static void startAnimation(SpellType spellType) {
+        switch(spellType) {
+        case FIRE: fireAnimFired = true;
+            fireVector.x = (float) (Math.random() * Gdx.graphics.getWidth());
+            fireVector.y = animStart;
+            
+            //Ensure that the animation doesn't go off screen.
+            if(fireVector.x < Gdx.graphics.getWidth() / 2)
+                animMoveSpeed.x = (float) (Math.random() * 100);
+            else animMoveSpeed.x = (float) -(Math.random() * 100);
+            
+            animMoveSpeed.y = FIRE_SPELL_SPEED;
+            break;
+        }
     }
     
     public static void moveGem(int dir, int signature) {
@@ -378,12 +513,20 @@ public class Match3Duels_Game implements Screen {
         for(int i = 0; i < matchLevel; i++) {
             boardGemArray[col + i][row].setInvisible(true);
         }
+        
+        switch(boardGemArray[col][row].getType()) {
+            case 0: startAnimation(SpellType.FIRE);
+        }
     }
     
     private static void hideMatchVertical(int col, int row, int matchLevel) {
         //For each gem in the match
         for(int i = 0; i < matchLevel; i++) {
             boardGemArray[col][row + i].setInvisible(true);
+        }
+        
+        switch(boardGemArray[col][row].getType()) {
+            case 0: startAnimation(SpellType.FIRE);
         }
     }
     
@@ -412,6 +555,30 @@ public class Match3Duels_Game implements Screen {
         checkMatches();
     }
     
+    private static void debugResetAllGems() {
+        int xPos;
+        int yPos;
+        int sig;
+        
+        for(int col = 0; col < BOARD_ROWS; col++) {
+            for(int row = 0; row < BOARD_ROWS; row++) {
+                xPos = (int) boardGemArray[col][row].getX();
+                yPos = (int) boardGemArray[col][row].getY();
+                sig = boardGemArray[col][row].getSignature();
+                
+                boardGemArray[col][row].remove();
+                boardGemArray[col][row] = newGem();
+                boardGemArray[col][row].setPosition(xPos, yPos);
+                boardGemArray[col][row].setSignature(sig);
+                
+                gameStage.addActor(boardGemArray[col][row]);
+                
+            }
+        }
+        
+        checkMatches();
+    }
+    
     private static GemActor newGem() {
         int idx = MathUtils.random(0, 4);
         
@@ -423,30 +590,6 @@ public class Match3Duels_Game implements Screen {
             case 4: return new HealGemActor_01();
             default: return new FireGemActor_01();
         }
-    }
-
-    @Override
-    public void render(float delta) {
-        Gdx.gl.glClearColor(1, 1, 1, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        
-        //Initial check for matches
-        if(firstFrame) {
-            checkMatches();
-            firstFrame = false;
-        }
-        
-        if(Gdx.input.isKeyJustPressed(Keys.SPACE)) {
-            if(potCount > 0) {
-                movesMade = 0;
-                potCount--;
-                fillEmptySlots();
-                ((PotionCounter) potionCounter).setNewSprite(potCount);
-            }
-        }
-        
-        gameStage.act(delta);
-        gameStage.draw();
     }
 
     @Override
