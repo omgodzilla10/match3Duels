@@ -1,6 +1,9 @@
 package com.mygdx.game;
 
+import java.util.ArrayList;
+
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -13,6 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
+import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 
 public class Match3Duels_Game implements Screen {
@@ -20,6 +24,13 @@ public class Match3Duels_Game implements Screen {
     
     /** The number of rows on the board. */
     static final int BOARD_ROWS = 6;
+    
+    /** The max number of moves a player can make before they have to
+     * take a potion. */
+    static final int MAX_MOVES = 10;
+    
+    /** The number of potions a player starts with. */
+    static final int MAX_POTS = 3;
     
     /** The padding (in pixels) between gem sprites. */
     static final int SPRITE_PADDING = 30;
@@ -36,11 +47,11 @@ public class Match3Duels_Game implements Screen {
     /** The height of the screen (at execution). */
     private int screenHeight;
     
-    /** Used by the gemFall method to see if the first gem has fallen yet. */
-    private static boolean firstGem;
+    /** The amount of moves the player has made. */
+    private static int movesMade;
     
-    /** Whether there is currently a match on the stage. */
-    private static boolean gemsMatched;
+    /** The number of potions the player currently has. */
+    private static int potCount;
     
     /** An array for each of the gem actors on the board. */
     private static GemActor[][] boardGemArray;
@@ -64,8 +75,9 @@ public class Match3Duels_Game implements Screen {
      */
     public Match3Duels_Game(final Match3Duels_Main game) {
         this.game = game;
-        gemsMatched = false;
-        firstGem = false;
+        
+        movesMade = 0;
+        potCount = MAX_POTS;
         
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
@@ -112,26 +124,32 @@ public class Match3Duels_Game implements Screen {
     }
     
     public static void moveGem(int dir, int signature) {
-        switch (dir) {
-        case GemTouchListener.DIR_RIGHT: 
-            moveGemRight(signature);
-            checkMatches();
-            break;
-            
-        case GemTouchListener.DIR_UP:
-            moveGemUp(signature);
-            checkMatches();
-            break;
-            
-        case GemTouchListener.DIR_LEFT:
-            moveGemLeft(signature);
-            checkMatches();
-            break;
-            
-        case GemTouchListener.DIR_DOWN:
-            moveGemDown(signature);
-            checkMatches();
-            break;
+        if(movesMade < MAX_MOVES) {
+            switch (dir) {
+            case GemTouchListener.DIR_RIGHT: 
+                moveGemRight(signature);
+                checkMatches();
+                movesMade++;
+                break;
+                
+            case GemTouchListener.DIR_UP:
+                moveGemUp(signature);
+                checkMatches();
+                movesMade++;
+                break;
+                
+            case GemTouchListener.DIR_LEFT:
+                moveGemLeft(signature);
+                checkMatches();
+                movesMade++;
+                break;
+                
+            case GemTouchListener.DIR_DOWN:
+                moveGemDown(signature);
+                checkMatches();
+                movesMade++;
+                break;
+            }
         }
     }
     
@@ -274,6 +292,31 @@ public class Match3Duels_Game implements Screen {
         }
     }
     
+    private static void moveGemDown(int col, int row) {
+        GemActor actor1;
+        GemActor actor2;
+        
+        if(row != 0) {
+            int colSwap;
+            int rowSwap;
+            
+            colSwap = col;
+            rowSwap = row - 1;
+            
+            actor1 = (GemActor) boardGemArray[col][row];
+            actor2 = (GemActor) boardGemArray[colSwap][rowSwap];
+            swapGems(actor1, actor2);
+            
+            //Set new signatures for each 
+            int tempSig = actor1.getSignature();
+            actor1.setSignature(actor2.getSignature());
+            actor2.setSignature(tempSig);
+            
+            boardGemArray[colSwap][rowSwap] = actor1;
+            boardGemArray[col][row] = actor2;
+        }
+    }
+    
     private static void swapGems(GemActor actor1, GemActor actor2) {
         gemMoveAction.setPosition(actor2.getX(), actor2.getY());
         gemMoveAction.setDuration(GEM_MOVE_DURATION);
@@ -310,7 +353,6 @@ public class Match3Duels_Game implements Screen {
     private static void checkMatches() {
         checkMatchesHorizontal();
         checkMatchesVertical();
-        collapseGems();
     }
     
     private static void checkMatchesHorizontal() {
@@ -334,7 +376,6 @@ public class Match3Duels_Game implements Screen {
                 if(matchLevel >= 3) {
                     System.out.println("Horizontal: " + matchLevel);
                     hideMatchHorizontal(col, row, matchLevel);
-                    gemsMatched = true;
                     matchLevel = 0;
                 }
             }
@@ -361,7 +402,6 @@ public class Match3Duels_Game implements Screen {
                     System.out.println("Vertical: " + matchLevel);
                     hideMatchVertical(col, row, matchLevel);
                     matchLevel = 0;
-                    gemsMatched = true;
                 }
                 
                 if(boardGemArray[col][row].isMatched())
@@ -384,50 +424,54 @@ public class Match3Duels_Game implements Screen {
         }
     }
     
-    private static void collapseGems() {
-        GemActor aboveActor;
-        int currentRow;
-        int tempSig;
+    private static void fillEmptySlots() {
+        int xPos;
+        int yPos;
+        int sig;
         
         for(int col = 0; col < BOARD_ROWS; col++) {
             for(int row = 0; row < BOARD_ROWS; row++) {
-                if(boardGemArray[col][row].isInvisible() 
-                        && row < BOARD_ROWS - 1) {
+                if(boardGemArray[col][row].isInvisible()) {
+                    xPos = (int) boardGemArray[col][row].getX();
+                    yPos = (int) boardGemArray[col][row].getY();
+                    sig = boardGemArray[col][row].getSignature();
                     
+                    boardGemArray[col][row].remove();
+                    boardGemArray[col][row] = newGem();
+                    boardGemArray[col][row].setPosition(xPos, yPos);
+                    boardGemArray[col][row].setSignature(sig);
+                    
+                    gameStage.addActor(boardGemArray[col][row]);
                 }
             }
         }
     }
     
-    private static void newGem(int col, int row) {
+    private static GemActor newGem() {
         int idx = MathUtils.random(0, 4);
         
         switch(idx) {
-            case 0: boardGemArray[col][row] = new FireGemActor_01();
-                    break;
-            case 1: boardGemArray[col][row] = new LightningGemActor_01();
-                    break;
-            case 2: boardGemArray[col][row] = new PoisonGemActor_01();
-                    break;
-            case 3: boardGemArray[col][row] = new ShieldGemActor_01();
-                    break;
-            case 4: boardGemArray[col][row] = new HealGemActor_01();
-                    break;
+            case 0: return new FireGemActor_01();
+            case 1: return new LightningGemActor_01();
+            case 2: return new PoisonGemActor_01();
+            case 3: return new ShieldGemActor_01();
+            case 4: return new HealGemActor_01();
+            default: return new FireGemActor_01();
         }
-        
-        boardGemArray[col][row].setPosition((row * (Gdx.graphics.getWidth() / BOARD_ROWS))
-                + (Gdx.graphics.getWidth() / BOARD_ROWS / 6), (col * (Gdx.graphics.getWidth() / BOARD_ROWS)) 
-                + (Gdx.graphics.getWidth() / BOARD_ROWS / 6));
-        
-        boardGemArray[col][row].setSignature((BOARD_ROWS - 1) * col);
-        
-        gameStage.addActor(boardGemArray[col][row]);
     }
 
     @Override
     public void render(float delta) {
         Gdx.gl.glClearColor(1, 1, 1, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        
+        if(Gdx.input.isKeyJustPressed(Keys.SPACE)) {
+            if(potCount > 0) {
+                movesMade = 0;
+                potCount--;
+                fillEmptySlots();
+            }
+        }
         
         gameStage.act(delta);
         gameStage.draw();
