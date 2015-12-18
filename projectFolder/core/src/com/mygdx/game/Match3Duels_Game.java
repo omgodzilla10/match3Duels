@@ -49,6 +49,12 @@ public class Match3Duels_Game implements Screen {
     /** The global animation speed of each gem when moved. */
     final static float GEM_MOVE_DURATION = 0.15f;
     
+    /** The length of the shield effect. */
+    final static float SHIELD_DURATION = (float) 1.5;
+    
+    /** The rate at which a spell effect fades out. Higher = faster. */
+    final static float EFFECT_FADE_RATE = 0.02f;
+    
     /** The maximum number of gems allowed to be in use. */
     final int MAX_GEMS = 5;
     
@@ -64,20 +70,20 @@ public class Match3Duels_Game implements Screen {
     /** Whether the lightningGem has been fired or not. */
     private static boolean lightningAnimFired;
     
-    /** The elapsed time since game execution. */
-    private static float elapsedTime;
+    /** Whether the poisonGem has been fired or not. */
+    private static boolean poisonAnimFired;
+    
+    /** Whether the shieldGem has been fired or not. */
+    private static boolean shieldAnimFired;
+    
+    /** Whether the healGem has been fired or not. */
+    private static boolean healAnimFired;
     
     /** The amount of moves the player has made. */
     private static int movesMade;
     
     /** The number of potions the player currently has. */
     private static int potCount;
-    
-    /** The y coordinate where all spell effect animations stop. */
-    private int animThreshold;
-    
-    /** The y coordinate where all spell effect animations begin. */
-    private static int animStart; //MAKE THIS A CONSTANT WHEN UI IS IMPLEMENTED.
     
     /** The R color of the background. */
     private static float rCol;
@@ -87,6 +93,12 @@ public class Match3Duels_Game implements Screen {
     
     /** The B color of the background. */
     private static float bCol;
+    
+    /** The elapsed time since game execution. */
+    private static float elapsedTime;
+    
+    /** A timer for the shield effect. */
+    private static float shieldTimer;
     
     /** An array for each of the gem actors on the board. */
     private static GemActor[][] boardGemArray;
@@ -106,26 +118,20 @@ public class Match3Duels_Game implements Screen {
     /** Used to animate the gem being swapped with the moved gem. */
     private static MoveToAction gemSwapAction;
     
-    /** The animation for the fire gem. */
-    private static Animation fireAnim;
-    
-    /** The texture for the fire animation. */
-    private Texture fireAnimTex;
-    
-    /** The TextureRegion for the fire animation. */
-    private TextureRegion[] fireTexRegion;
-    
-    /** A Vector2 for the fire animation's coordinates. */
-    private static Vector2 fireVector;
-    
-    /** The speed an animation will move along the X and Y axis. */
-    private static Vector2 animMoveSpeed;
-    
-    /** A spritebatch, for elements not drawn using scene2D. */
-    private SpriteBatch spriteBatch;
+    /** A fireball sound effect. */
+    private static Sound fireGemSound;
     
     /** A "zap" sound effect. */
     private static Sound lightningGemSound;
+    
+    /** The poison sound effect. */
+    private static Sound poisonGemSound;
+    
+    /** The shield sound effect. */
+    private static Sound shieldGemSound;
+    
+    /** The heal sound effect. */
+    private static Sound healGemSound;
     
     private enum SpellType {
         FIRE,
@@ -151,9 +157,6 @@ public class Match3Duels_Game implements Screen {
         gCol = 1f;
         bCol = 1f;
         
-        fireAnimFired = false;
-        lightningAnimFired = false;
-        
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
         
@@ -170,20 +173,8 @@ public class Match3Duels_Game implements Screen {
         
         for(int row = 0; row < BOARD_ROWS; row++) {
             for(int col = 0; col < BOARD_ROWS; col++) {
-                int idx = MathUtils.random(0, 4);
+                boardGemArray[row][col] = newGem();
                 
-                switch(idx) {
-                    case 0: boardGemArray[row][col] = new FireGemActor_01();
-                            break;
-                    case 1: boardGemArray[row][col] = new LightningGemActor_01();
-                            break;
-                    case 2: boardGemArray[row][col] = new PoisonGemActor_01();
-                            break;
-                    case 3: boardGemArray[row][col] = new ShieldGemActor_01();
-                            break;
-                    case 4: boardGemArray[row][col] = new HealGemActor_01();
-                            break;
-                }
                 //Set position of each gem and center.
                 boardGemArray[row][col].setPosition((row * (screenWidth / BOARD_ROWS))
                         + (screenWidth / BOARD_ROWS / 6), (col * (screenWidth / BOARD_ROWS)) 
@@ -192,37 +183,15 @@ public class Match3Duels_Game implements Screen {
                 gameStage.addActor(boardGemArray[row][col]);
             }
         }
-        //Temp until all UI elements are in place.
-        animThreshold = 3 * (screenHeight / 4);
-        animStart = screenHeight / 2;
         
         potionCounter = new PotionCounter();
         gameStage.addActor(potionCounter);
         
-        fireAnimTex = new Texture(Gdx.files.internal("gem_fire_anim.png"));
-        
-        fireTexRegion = new TextureRegion[6];
-        
-        TextureRegion[][] texRegionTemp = new TextureRegion[1][6];
-        
-        //Assign texture regions for each animation.
-        texRegionTemp = TextureRegion.split(fireAnimTex, 64, 64);
-        for(int i = 0; i < fireTexRegion.length; i++) {
-            fireTexRegion[i] = texRegionTemp[0][i];
-        }
-        
-        //Initialize spell effect animations.
-        fireAnim = new Animation(ANIM_DURATION, fireTexRegion);
-        
-        //Set animation play modes.
-        fireAnim.setPlayMode(PlayMode.LOOP);
-        
-        fireVector = new Vector2();
-        
-        animMoveSpeed = new Vector2();
-        spriteBatch = new SpriteBatch();
-        
         lightningGemSound = Gdx.audio.newSound(Gdx.files.internal("zap_01.wav"));
+        fireGemSound = Gdx.audio.newSound(Gdx.files.internal("fire_01.wav"));
+        poisonGemSound = Gdx.audio.newSound(Gdx.files.internal("poison_01.wav"));
+        shieldGemSound = Gdx.audio.newSound(Gdx.files.internal("shield_01.wav"));
+        healGemSound = Gdx.audio.newSound(Gdx.files.internal("heal_01.wav"));
         
         checkMatches();
     }
@@ -255,15 +224,21 @@ public class Match3Duels_Game implements Screen {
         gameStage.act(delta);
         gameStage.draw();
         
-        spriteBatch.begin();
-        
+        fireAnimations();
+    }
+    
+    private static void fireAnimations() {
         if(fireAnimFired) {
-            fireVector.x += animMoveSpeed.x * delta;
-            fireVector.y += animMoveSpeed.y * delta;
-            
-            spriteBatch.draw(fireAnim.getKeyFrame(elapsedTime, true), fireVector.x, fireVector.y);
-            
-            if(fireVector.y > animThreshold) {
+            if(gCol < 1 || bCol < 1) {
+                if(elapsedTime > 0.01f) {
+                    elapsedTime = 0;
+                    gCol += EFFECT_FADE_RATE;
+                    bCol += EFFECT_FADE_RATE;
+                }
+            } else {
+                elapsedTime = 0;
+                gCol = 1;
+                bCol = 1;
                 fireAnimFired = false;
             }
         }
@@ -272,8 +247,8 @@ public class Match3Duels_Game implements Screen {
             if(rCol < 1 || gCol < 1) {
                 if(elapsedTime > 0.01f) {
                     elapsedTime = 0;
-                    rCol += 0.03;
-                    gCol += 0.03;
+                    rCol += EFFECT_FADE_RATE;
+                    gCol += EFFECT_FADE_RATE;
                 }
             } else {
                 elapsedTime = 0;
@@ -283,28 +258,109 @@ public class Match3Duels_Game implements Screen {
             }
         }
         
-        spriteBatch.end();
+        if(poisonAnimFired) {
+            if(rCol < 1 || gCol < 1 || bCol < 1) {
+                if(elapsedTime > 0.01f) {
+                    elapsedTime = 0;
+                    rCol += EFFECT_FADE_RATE;
+                    gCol += EFFECT_FADE_RATE;
+                    bCol += EFFECT_FADE_RATE;
+                }
+            } else {
+                elapsedTime = 0;
+                rCol = 1;
+                gCol = 1;
+                bCol = 1;
+                poisonAnimFired = false;
+            }
+        }
+        
+        if(shieldAnimFired) {
+            if(shieldTimer > SHIELD_DURATION) {
+                if(bCol < 1) {
+                    if(elapsedTime > 0.01f) {
+                        elapsedTime = 0;
+                        bCol += EFFECT_FADE_RATE;
+                    }
+                } else {
+                    elapsedTime = 0;
+                    bCol = 1;
+                    shieldAnimFired = false;
+                }
+            } else
+                shieldTimer += Gdx.graphics.getDeltaTime();
+        }
+        
+        if(healAnimFired) {
+            if(rCol < 1 || bCol < 1) {
+                if(elapsedTime > 0.01f) {
+                    elapsedTime = 0;
+                    rCol += EFFECT_FADE_RATE;
+                    bCol += EFFECT_FADE_RATE;
+                }
+            } else {
+                elapsedTime = 0;
+                rCol = 1;
+                bCol = 1;
+                healAnimFired = false;
+            }
+        }
     }
     
     private static void startAnimation(SpellType spellType) {
+        rCol = 1;
+        gCol = 1;
+        bCol = 1;
+        
+        fireAnimFired = false;
+        lightningAnimFired = false;
+        poisonAnimFired = false;
+        healAnimFired = false;
+        
         switch(spellType) {
-        case FIRE: fireAnimFired = true;
-            fireVector.x = (float) (Math.random() * Gdx.graphics.getWidth());
-            fireVector.y = animStart;
+        case FIRE: 
+            fireAnimFired = true;
+            gCol = 0.6f;
+            bCol = 0.6f;
             
-            //Ensure that the animation doesn't go off screen.
-            if(fireVector.x < Gdx.graphics.getWidth() / 2)
-                animMoveSpeed.x = (float) (Math.random() * 100);
-            else animMoveSpeed.x = (float) -(Math.random() * 100);
-            
-            animMoveSpeed.y = FIRE_SPELL_SPEED;
+            fireGemSound.play();
             break;
             
-        case LIGHTNING: lightningAnimFired = true;
-            lightningGemSound.play();
+        case LIGHTNING: 
+            lightningAnimFired = true;
             rCol = 0.4f;
             gCol = 0.7f;
             elapsedTime = 0;
+            
+            lightningGemSound.play();
+            break;
+            
+        case POISON:
+            poisonAnimFired = true;
+            rCol = 0.6f;
+            gCol = 0.5f;
+            bCol = 0.6f;
+            elapsedTime = 0;
+            
+            poisonGemSound.play();
+            break;
+            
+        case SHIELD:
+            shieldAnimFired = true;
+            shieldTimer = 0;
+            bCol = 0.6f;
+            elapsedTime = 0;
+            
+            shieldGemSound.play();
+            break;
+            
+        case HEAL:
+            healAnimFired = true;
+            rCol = 0.6f;
+            bCol = 0.6f;
+            elapsedTime = 0;
+            
+            healGemSound.play();
             break;
         }
     }
@@ -515,9 +571,7 @@ public class Match3Duels_Game implements Screen {
                 }
                 
                 if(matchLevel >= 3) {
-                    System.out.println("Horizontal: " + matchLevel);
                     hideMatchHorizontal(col, row, matchLevel);
-                    matchLevel = 0;
                 }
             }
         }
@@ -554,7 +608,15 @@ public class Match3Duels_Game implements Screen {
         
         switch(boardGemArray[col][row].getType()) {
             case 0: startAnimation(SpellType.FIRE);
+                break;
             case 1: startAnimation(SpellType.LIGHTNING);
+                break;
+            case 2: startAnimation(SpellType.POISON);
+                break;
+            case 3: startAnimation(SpellType.SHIELD);
+                break;
+            case 4: startAnimation(SpellType.HEAL);
+                break;
         }
     }
     
@@ -566,7 +628,15 @@ public class Match3Duels_Game implements Screen {
         
         switch(boardGemArray[col][row].getType()) {
             case 0: startAnimation(SpellType.FIRE);
+                break;
             case 1: startAnimation(SpellType.LIGHTNING);
+                break;
+            case 2: startAnimation(SpellType.POISON);
+                break;
+            case 3: startAnimation(SpellType.SHIELD);
+                break;
+            case 4: startAnimation(SpellType.HEAL);
+                break;
         }
     }
     
