@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -60,8 +61,11 @@ public class Match3Duels_Game implements Screen {
     /** Whether the fireGem has been fired or not. */
     private static boolean fireAnimFired;
     
+    /** Whether the lightningGem has been fired or not. */
+    private static boolean lightningAnimFired;
+    
     /** The elapsed time since game execution. */
-    private float elapsedTime;
+    private static float elapsedTime;
     
     /** The amount of moves the player has made. */
     private static int movesMade;
@@ -74,6 +78,15 @@ public class Match3Duels_Game implements Screen {
     
     /** The y coordinate where all spell effect animations begin. */
     private static int animStart; //MAKE THIS A CONSTANT WHEN UI IS IMPLEMENTED.
+    
+    /** The R color of the background. */
+    private static float rCol;
+    
+    /** The G color of the background. */
+    private static float gCol;
+    
+    /** The B color of the background. */
+    private static float bCol;
     
     /** An array for each of the gem actors on the board. */
     private static GemActor[][] boardGemArray;
@@ -111,6 +124,9 @@ public class Match3Duels_Game implements Screen {
     /** A spritebatch, for elements not drawn using scene2D. */
     private SpriteBatch spriteBatch;
     
+    /** A "zap" sound effect. */
+    private static Sound lightningGemSound;
+    
     private enum SpellType {
         FIRE,
         LIGHTNING,
@@ -131,7 +147,12 @@ public class Match3Duels_Game implements Screen {
         elapsedTime = 0;
         potCount = MAX_POTS;
         
+        rCol = 1f;
+        gCol = 1f;
+        bCol = 1f;
+        
         fireAnimFired = false;
+        lightningAnimFired = false;
         
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
@@ -171,36 +192,44 @@ public class Match3Duels_Game implements Screen {
                 gameStage.addActor(boardGemArray[row][col]);
             }
         }
+        //Temp until all UI elements are in place.
+        animThreshold = 3 * (screenHeight / 4);
+        animStart = screenHeight / 2;
         
         potionCounter = new PotionCounter();
         gameStage.addActor(potionCounter);
         
         fireAnimTex = new Texture(Gdx.files.internal("gem_fire_anim.png"));
+        
         fireTexRegion = new TextureRegion[6];
-        TextureRegion[][] fireTexRegionTemp = new TextureRegion[1][6];
-
-        fireTexRegionTemp = TextureRegion.split(fireAnimTex, 64, 64);
+        
+        TextureRegion[][] texRegionTemp = new TextureRegion[1][6];
+        
+        //Assign texture regions for each animation.
+        texRegionTemp = TextureRegion.split(fireAnimTex, 64, 64);
         for(int i = 0; i < fireTexRegion.length; i++) {
-            fireTexRegion[i] = fireTexRegionTemp[0][i];
+            fireTexRegion[i] = texRegionTemp[0][i];
         }
         
-        animThreshold = 3 * (screenHeight / 4);
-        animStart = screenHeight / 2;
-        
+        //Initialize spell effect animations.
         fireAnim = new Animation(ANIM_DURATION, fireTexRegion);
+        
+        //Set animation play modes.
         fireAnim.setPlayMode(PlayMode.LOOP);
         
-        fireAnimFired = false;
         fireVector = new Vector2();
+        
         animMoveSpeed = new Vector2();
         spriteBatch = new SpriteBatch();
+        
+        lightningGemSound = Gdx.audio.newSound(Gdx.files.internal("zap_01.wav"));
         
         checkMatches();
     }
     
     @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(1, 1, 1, 1);
+        Gdx.gl.glClearColor(rCol, gCol, bCol, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         
         elapsedTime += delta;
@@ -239,6 +268,21 @@ public class Match3Duels_Game implements Screen {
             }
         }
         
+        if(lightningAnimFired) {
+            if(rCol < 1 || gCol < 1) {
+                if(elapsedTime > 0.01f) {
+                    elapsedTime = 0;
+                    rCol += 0.03;
+                    gCol += 0.03;
+                }
+            } else {
+                elapsedTime = 0;
+                rCol = 1;
+                gCol = 1;
+                lightningAnimFired = false;
+            }
+        }
+        
         spriteBatch.end();
     }
     
@@ -254,6 +298,13 @@ public class Match3Duels_Game implements Screen {
             else animMoveSpeed.x = (float) -(Math.random() * 100);
             
             animMoveSpeed.y = FIRE_SPELL_SPEED;
+            break;
+            
+        case LIGHTNING: lightningAnimFired = true;
+            lightningGemSound.play();
+            rCol = 0.4f;
+            gCol = 0.7f;
+            elapsedTime = 0;
             break;
         }
     }
@@ -503,6 +554,7 @@ public class Match3Duels_Game implements Screen {
         
         switch(boardGemArray[col][row].getType()) {
             case 0: startAnimation(SpellType.FIRE);
+            case 1: startAnimation(SpellType.LIGHTNING);
         }
     }
     
@@ -514,6 +566,7 @@ public class Match3Duels_Game implements Screen {
         
         switch(boardGemArray[col][row].getType()) {
             case 0: startAnimation(SpellType.FIRE);
+            case 1: startAnimation(SpellType.LIGHTNING);
         }
     }
     
