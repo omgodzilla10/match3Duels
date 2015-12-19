@@ -98,4 +98,9 @@ public class ShieldGemActor_01 extends GemActor {
     public boolean isInvisible() {
         return invisible;
     }
+    
+    @Override
+    public int fireSpell(int matchLevel) {
+        return 0;
+    }
 }

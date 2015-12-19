@@ -10,6 +10,10 @@ import com.badlogic.gdx.scenes.scene2d.Touchable;
 public class HealGemActor_01 extends GemActor {
     static final int GEM_TYPE = 4;
     
+    //The health rewarded by this gem.
+    final int EFFECT = 15;
+    
+    
     private int spriteXY;
     private int signature;
     private boolean matched;
@@ -97,5 +101,14 @@ public class HealGemActor_01 extends GemActor {
     @Override
     public boolean isInvisible() {
         return invisible;
+    }
+    
+    @Override
+    public int fireSpell(int matchLevel) {
+        switch (matchLevel) {
+        case 3: return EFFECT;
+        case 4: return (int) (EFFECT * 1.5);
+        default: return EFFECT * 5;
+        }
     }
 }

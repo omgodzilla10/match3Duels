@@ -98,10 +98,10 @@ public class Match3Duels_Game implements Screen {
     private static Actor potionCounter;
     
     /** The actor for the player's health bar. */
-    private static Actor playerHealth;
+    private static Actor playerHealthBar;
     
     /** The actor for the enemy's health bar. */
-    private static Actor enemyHealth;
+    private static Actor enemyHealthBar;
     
     /** The stage on which the board and UI elements will appear. */
     private static Stage gameStage;
@@ -168,14 +168,37 @@ public class Match3Duels_Game implements Screen {
         //Initialize the board arrays with random gems
         boardGemArray = new GemActor[BOARD_ROWS][BOARD_ROWS];
         
+        int tempType;
+        int sig = 0;
+        
         for(int row = 0; row < BOARD_ROWS; row++) {
             for(int col = 0; col < BOARD_ROWS; col++) {
                 boardGemArray[row][col] = newGem();
+                
+                if(row > 1 && col > 1) {
+                    tempType = boardGemArray[row][col].getType();
+                    
+                    //Randomize the gem until it's not matching the gems adjacent to it.
+                    while((boardGemArray[row][col - 1].getType() == tempType 
+                            && boardGemArray[row][col - 2].getType() == tempType) 
+                            || (boardGemArray[row - 1][col].getType() == tempType
+                            && boardGemArray[row - 2][col].getType() == tempType)
+                            && boardGemArray[row][col - 1].getType() == boardGemArray[row][col - 2].getType()
+                            && boardGemArray[row - 1][col].getType() == boardGemArray[row - 2][col].getType()) {
+                        
+                        //Create a new random gem.
+                        boardGemArray[row][col] = newGem();
+                        tempType = boardGemArray[row][col].getType();
+                    }
+                }
                 
                 //Set position of each gem and center.
                 boardGemArray[row][col].setPosition((row * (screenWidth / BOARD_ROWS))
                         + (screenWidth / BOARD_ROWS / 6), (col * (screenWidth / BOARD_ROWS)) 
                         + (screenWidth / BOARD_ROWS / 6) + BOTTOM_PADDING);
+                
+                boardGemArray[row][col].setSignature(sig);
+                sig++;
                 
                 gameStage.addActor(boardGemArray[row][col]);
             }
@@ -183,14 +206,14 @@ public class Match3Duels_Game implements Screen {
         
         //Initialize all extra UI elements and draw them to the screen.
         potionCounter = new PotionCounter();
-        playerHealth = new HealthBarActor();
-        enemyHealth = new HealthBarActor();
+        playerHealthBar = new HealthBarActor();
+        enemyHealthBar = new HealthBarActor();
         
-        playerHealth.setPosition(0, 0);
+        playerHealthBar.setPosition(0, 0);
         
         gameStage.addActor(potionCounter);
-        gameStage.addActor(playerHealth);
-        gameStage.addActor(enemyHealth);
+        gameStage.addActor(playerHealthBar);
+        gameStage.addActor(enemyHealthBar);
         
         //Initialize all sound effects.
         lightningGemSound = Gdx.audio.newSound(Gdx.files.internal("zap_01.wav"));
@@ -218,11 +241,6 @@ public class Match3Duels_Game implements Screen {
                 checkMatches();
                 ((PotionCounter) potionCounter).setNewSprite(potCount);
             }
-        }
-        
-        if(Gdx.input.isKeyJustPressed(Keys.CONTROL_LEFT)) {
-            movesMade = 0;
-            fillEmptySlots();
         }
         
         gameStage.act(delta);
@@ -369,7 +387,8 @@ public class Match3Duels_Game implements Screen {
         }
     }
     
-    public static void moveGem(int dir, int signature) {
+    
+    protected static void moveGem(int dir, int signature) {
         if(movesMade < MAX_MOVES) {
             switch (dir) {
             case GemTouchListener.DIR_RIGHT: 
@@ -427,7 +446,7 @@ public class Match3Duels_Game implements Screen {
             
             boardGemArray[colSwap][rowSwap] = actor1;
             boardGemArray[col][row] = actor2;
-        }
+        } else movesMade--;
     }
     
     private static void moveGemUp(int signature) {
@@ -455,7 +474,7 @@ public class Match3Duels_Game implements Screen {
             
             boardGemArray[colSwap][rowSwap] = actor1;
             boardGemArray[col][row] = actor2;
-        }
+        } else movesMade--;
     }
     
     private static void moveGemLeft(int signature) {
@@ -485,7 +504,7 @@ public class Match3Duels_Game implements Screen {
             boardGemArray[col][row] = actor2;
             
             boardGemArray[col][row].setColor(Color.BLACK);
-        }
+        } else movesMade--;
     }
     
     private static void moveGemDown(int signature) {
@@ -513,7 +532,7 @@ public class Match3Duels_Game implements Screen {
             
             boardGemArray[colSwap][rowSwap] = actor1;
             boardGemArray[col][row] = actor2;
-        }
+        } else movesMade--;
     }
     
     private static void swapGems(GemActor actor1, GemActor actor2) {
@@ -622,6 +641,8 @@ public class Match3Duels_Game implements Screen {
             case 4: startAnimation(SpellType.HEAL);
                 break;
         }
+        
+        fireSpell(boardGemArray[col][row], matchLevel);
     }
     
     private static void hideMatchVertical(int col, int row, int matchLevel) {
@@ -642,12 +663,46 @@ public class Match3Duels_Game implements Screen {
             case 4: startAnimation(SpellType.HEAL);
                 break;
         }
+        
+        fireSpell(boardGemArray[col][row], matchLevel);
+    }
+    
+    private static void fireSpell(GemActor gem, int matchLevel) {
+        int type = gem.getType();
+        
+        switch (type) {
+        case 0: modifyHealth(gem.fireSpell(matchLevel));
+        case 1: modifyHealth(gem.fireSpell(matchLevel));
+        case 2: recurringSpell(gem.fireSpell(matchLevel));
+        case 3: persistingSpell(gem.fireSpell(matchLevel));
+        case 4: modifyHealth(gem.fireSpell(matchLevel));
+        }
+    }
+    
+    private static void modifyHealth(int health) {
+        if(health < 0) {
+            health *= -1;
+            enemyHealthBar.setX(enemyHealthBar.getX() 
+                    - (enemyHealthBar.getWidth() * health / 100));
+        } else {
+            playerHealthBar.setX(playerHealthBar.getX() 
+                    + (playerHealthBar.getWidth() * health / 100));
+        }
+    }
+    
+    private static void recurringSpell(int health) {
+        
+    }
+    
+    private static void persistingSpell(int effect) {
+        
     }
     
     private static void fillEmptySlots() {
         int xPos;
         int yPos;
         int sig;
+        int tempType;
         
         for(int col = 0; col < BOARD_ROWS; col++) {
             for(int row = 0; row < BOARD_ROWS; row++) {
@@ -658,6 +713,25 @@ public class Match3Duels_Game implements Screen {
                     
                     boardGemArray[col][row].remove();
                     boardGemArray[col][row] = newGem();
+                    
+                    if(row > 1 && col > 1) {
+                        tempType = boardGemArray[row][col].getType();
+                        
+                        //Randomize the gem until it's not matching the gems adjacent to it.
+                        while((boardGemArray[row][col - 1].getType() == tempType 
+                                && boardGemArray[row][col - 2].getType() == tempType) 
+                                || (boardGemArray[row - 1][col].getType() == tempType
+                                && boardGemArray[row - 2][col].getType() == tempType)
+                                && boardGemArray[row][col - 1].getType() == boardGemArray[row][col - 2].getType()
+                                && boardGemArray[row - 1][col].getType() == boardGemArray[row - 2][col].getType()) {
+                            
+                            //Create a new random gem.
+                            boardGemArray[row][col] = newGem();
+                            tempType = boardGemArray[row][col].getType();
+                        }
+                    }
+                    
+                    
                     boardGemArray[col][row].setPosition(xPos, yPos);
                     boardGemArray[col][row].setSignature(sig);
                     

@@ -11,6 +11,8 @@ import com.badlogic.gdx.scenes.scene2d.Touchable;
 public class FireGemActor_01 extends GemActor {
     static final int GEM_TYPE = 0;
     
+    final int EFFECT = -10;
+    
     private int spriteXY;
     private int signature;
     private boolean matched;
@@ -98,5 +100,14 @@ public class FireGemActor_01 extends GemActor {
     @Override
     public boolean isInvisible() {
         return invisible;
+    }
+    
+    @Override
+    public int fireSpell(int matchLevel) {
+        switch(matchLevel) {
+        case 3: return EFFECT;
+        case 4: return EFFECT * 2;
+        default: return EFFECT * 3;
+        }
     }
 }

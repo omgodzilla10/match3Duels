@@ -32,7 +32,7 @@ public class HealthBarActor extends Actor {
     
     @Override
     protected void sizeChanged() {
-        sprite.setSize(getWidth(), getHeight());
         super.sizeChanged();
+        sprite.setSize(getWidth(), getHeight());
     }
 }
