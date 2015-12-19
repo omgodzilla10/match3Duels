@@ -207,7 +207,7 @@ public class Match3Duels_Game implements Screen {
             if(potCount > 0) {
                 movesMade = 0;
                 potCount--;
-                debugResetAllGems();
+                fillEmptySlots();
                 checkMatches();
                 ((PotionCounter) potionCounter).setNewSprite(potCount);
             }
@@ -215,11 +215,8 @@ public class Match3Duels_Game implements Screen {
         
         if(Gdx.input.isKeyJustPressed(Keys.CONTROL_LEFT)) {
             movesMade = 0;
-            debugResetAllGems();
+            fillEmptySlots();
         }
-        
-        if(Gdx.input.isKeyJustPressed(Keys.SHIFT_LEFT))
-            startAnimation(SpellType.FIRE);
         
         gameStage.act(delta);
         gameStage.draw();
@@ -320,16 +317,16 @@ public class Match3Duels_Game implements Screen {
         switch(spellType) {
         case FIRE: 
             fireAnimFired = true;
-            gCol = 0.6f;
-            bCol = 0.6f;
+            gCol = 0.7f;
+            bCol = 0.7f;
             
             fireGemSound.play();
             break;
             
         case LIGHTNING: 
             lightningAnimFired = true;
-            rCol = 0.4f;
-            gCol = 0.7f;
+            rCol = 0.5f;
+            gCol = 0.8f;
             elapsedTime = 0;
             
             lightningGemSound.play();
@@ -337,9 +334,9 @@ public class Match3Duels_Game implements Screen {
             
         case POISON:
             poisonAnimFired = true;
-            rCol = 0.6f;
-            gCol = 0.5f;
-            bCol = 0.6f;
+            rCol = 0.8f;
+            gCol = 0.7f;
+            bCol = 0.8f;
             elapsedTime = 0;
             
             poisonGemSound.play();
@@ -348,7 +345,7 @@ public class Match3Duels_Game implements Screen {
         case SHIELD:
             shieldAnimFired = true;
             shieldTimer = 0;
-            bCol = 0.6f;
+            bCol = 0.7f;
             elapsedTime = 0;
             
             shieldGemSound.play();
@@ -356,8 +353,8 @@ public class Match3Duels_Game implements Screen {
             
         case HEAL:
             healAnimFired = true;
-            rCol = 0.6f;
-            bCol = 0.6f;
+            rCol = 0.7f;
+            bCol = 0.7f;
             elapsedTime = 0;
             
             healGemSound.play();
