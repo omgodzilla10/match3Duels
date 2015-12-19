@@ -1,27 +1,15 @@
 package com.mygdx.game;
 
-import java.util.ArrayList;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Animation;
-import com.badlogic.gdx.graphics.g2d.Animation.PlayMode;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
-import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 
 public class Match3Duels_Game implements Screen {
@@ -38,7 +26,10 @@ public class Match3Duels_Game implements Screen {
     static final int MAX_POTS = 3;
     
     /** The padding (in pixels) between gem sprites. */
-    static final int SPRITE_PADDING = 15;
+    static final int SPRITE_PADDING = 10;
+    
+    /** The padding (in pixels) beneath the match-3 board. */
+    final int BOTTOM_PADDING = Gdx.graphics.getHeight() / 9;
     
     /** The speed that the fire spell animation moves along the y axis. */
     static final int FIRE_SPELL_SPEED = 400;
@@ -53,7 +44,7 @@ public class Match3Duels_Game implements Screen {
     final static float SHIELD_DURATION = (float) 1.5;
     
     /** The rate at which a spell effect fades out. Higher = faster. */
-    final static float EFFECT_FADE_RATE = 0.02f;
+    final static float EFFECT_FADE_RATE = 0.01f;
     
     /** The maximum number of gems allowed to be in use. */
     final int MAX_GEMS = 5;
@@ -105,6 +96,12 @@ public class Match3Duels_Game implements Screen {
     
     /** The actor for the potion count UI element. */
     private static Actor potionCounter;
+    
+    /** The actor for the player's health bar. */
+    private static Actor playerHealth;
+    
+    /** The actor for the enemy's health bar. */
+    private static Actor enemyHealth;
     
     /** The stage on which the board and UI elements will appear. */
     private static Stage gameStage;
@@ -178,21 +175,31 @@ public class Match3Duels_Game implements Screen {
                 //Set position of each gem and center.
                 boardGemArray[row][col].setPosition((row * (screenWidth / BOARD_ROWS))
                         + (screenWidth / BOARD_ROWS / 6), (col * (screenWidth / BOARD_ROWS)) 
-                        + (screenWidth / BOARD_ROWS / 6) + 50);
+                        + (screenWidth / BOARD_ROWS / 6) + BOTTOM_PADDING);
                 
                 gameStage.addActor(boardGemArray[row][col]);
             }
         }
         
+        //Initialize all extra UI elements and draw them to the screen.
         potionCounter = new PotionCounter();
-        gameStage.addActor(potionCounter);
+        playerHealth = new HealthBarActor();
+        enemyHealth = new HealthBarActor();
         
+        playerHealth.setPosition(0, 0);
+        
+        gameStage.addActor(potionCounter);
+        gameStage.addActor(playerHealth);
+        gameStage.addActor(enemyHealth);
+        
+        //Initialize all sound effects.
         lightningGemSound = Gdx.audio.newSound(Gdx.files.internal("zap_01.wav"));
         fireGemSound = Gdx.audio.newSound(Gdx.files.internal("fire_01.wav"));
         poisonGemSound = Gdx.audio.newSound(Gdx.files.internal("poison_01.wav"));
         shieldGemSound = Gdx.audio.newSound(Gdx.files.internal("shield_01.wav"));
         healGemSound = Gdx.audio.newSound(Gdx.files.internal("heal_01.wav"));
         
+        //Initial check for matches at game execution.
         checkMatches();
     }
     
