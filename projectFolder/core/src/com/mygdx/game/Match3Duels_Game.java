@@ -34,14 +34,14 @@ public class Match3Duels_Game implements Screen {
     /** The speed that the fire spell animation moves along the y axis. */
     static final int FIRE_SPELL_SPEED = 400;
     
+    /** The default max health for the player and enemy. */
+    static final int MAX_HEALTH = 100;
+    
     /** The time, in seconds, between frames in an animation. */
     static final float ANIM_DURATION = 0.1f;
     
     /** The global animation speed of each gem when moved. */
     final static float GEM_MOVE_DURATION = 0.15f;
-    
-    /** The length of the shield effect. */
-    final static float SHIELD_DURATION = (float) 1.5;
     
     /** The rate at which a spell effect fades out. Higher = faster. */
     final static float EFFECT_FADE_RATE = 0.01f;
@@ -76,6 +76,12 @@ public class Match3Duels_Game implements Screen {
     /** The number of potions the player currently has. */
     private static int potCount;
     
+    /** The player's health. */
+    private static int playerHealth;
+    
+    /** The enemy's health. */
+    private static int enemyHealth;
+    
     /** The R color of the background. */
     private static float rCol;
     
@@ -90,6 +96,9 @@ public class Match3Duels_Game implements Screen {
     
     /** A timer for the shield effect. */
     private static float shieldTimer;
+    
+    /** The length of the shield effect. */
+    private static float shieldDuration;
     
     /** An array for each of the gem actors on the board. */
     private static GemActor[][] boardGemArray;
@@ -148,6 +157,8 @@ public class Match3Duels_Game implements Screen {
         
         movesMade = 0;
         elapsedTime = 0;
+        shieldTimer = 0;
+        shieldDuration = 0;
         potCount = MAX_POTS;
         
         rCol = 1f;
@@ -211,6 +222,9 @@ public class Match3Duels_Game implements Screen {
         
         playerHealthBar.setPosition(0, 0);
         
+        playerHealth = MAX_HEALTH;
+        enemyHealth = MAX_HEALTH;
+        
         gameStage.addActor(potionCounter);
         gameStage.addActor(playerHealthBar);
         gameStage.addActor(enemyHealthBar);
@@ -241,6 +255,12 @@ public class Match3Duels_Game implements Screen {
                 checkMatches();
                 ((PotionCounter) potionCounter).setNewSprite(potCount);
             }
+        }
+        
+        if(Gdx.input.isKeyJustPressed(Keys.CONTROL_LEFT)) {
+            movesMade = 0;
+            fillEmptySlots();
+            checkMatches();
         }
         
         gameStage.act(delta);
@@ -298,7 +318,7 @@ public class Match3Duels_Game implements Screen {
         }
         
         if(shieldAnimFired) {
-            if(shieldTimer > SHIELD_DURATION) {
+            if(shieldTimer > shieldDuration) {
                 if(bCol < 1) {
                     if(elapsedTime > 0.01f) {
                         elapsedTime = 0;
@@ -306,6 +326,9 @@ public class Match3Duels_Game implements Screen {
                     }
                 } else {
                     elapsedTime = 0;
+                    System.out.println("Shield duration: " + shieldDuration);
+                    shieldDuration = 0;
+                    shieldTimer = 0;
                     bCol = 1;
                     shieldAnimFired = false;
                 }
@@ -581,20 +604,19 @@ public class Match3Duels_Game implements Screen {
         for(int col = 0; col < BOARD_ROWS; col++) {
             
             for(int row = 0; row < BOARD_ROWS; row++) {
-                
-                matchLevel = 1;
-                while(col != BOARD_ROWS - matchLevel && !boardGemArray[col][row].isMatched()
-                        && boardGemArray[col + (matchLevel - 1)][row].getType() 
-                        == boardGemArray[col + matchLevel][row].getType()
-                        && !boardGemArray[col + (matchLevel - 1)][row].isInvisible()
-                        && !boardGemArray[col + matchLevel][row].isInvisible()) {
+                if(!boardGemArray[col][row].isInvisible()) {
+                    matchLevel = 1;
                     
-                    matchLevel++;
-                    boardGemArray[col + (matchLevel - 1)][row].toggleMatched();
-                }
-                
-                if(matchLevel >= 3) {
-                    hideMatchHorizontal(col, row, matchLevel);
+                    while(col < BOARD_ROWS - matchLevel
+                            && boardGemArray[col + matchLevel][row].getType()
+                            == boardGemArray[col][row].getType()
+                            && !boardGemArray[col + matchLevel][row].isInvisible()) {
+                        matchLevel++;
+                    }
+                    
+                    if(matchLevel >= 3) {
+                        hideMatchHorizontal(col, row, matchLevel);
+                    }
                 }
             }
         }
@@ -629,18 +651,7 @@ public class Match3Duels_Game implements Screen {
             boardGemArray[col + i][row].setInvisible(true);
         }
         
-        switch(boardGemArray[col][row].getType()) {
-            case 0: startAnimation(SpellType.FIRE);
-                break;
-            case 1: startAnimation(SpellType.LIGHTNING);
-                break;
-            case 2: startAnimation(SpellType.POISON);
-                break;
-            case 3: startAnimation(SpellType.SHIELD);
-                break;
-            case 4: startAnimation(SpellType.HEAL);
-                break;
-        }
+        
         
         fireSpell(boardGemArray[col][row], matchLevel);
     }
@@ -649,19 +660,6 @@ public class Match3Duels_Game implements Screen {
         //For each gem in the match
         for(int i = 0; i < matchLevel; i++) {
             boardGemArray[col][row + i].setInvisible(true);
-        }
-        
-        switch(boardGemArray[col][row].getType()) {
-            case 0: startAnimation(SpellType.FIRE);
-                break;
-            case 1: startAnimation(SpellType.LIGHTNING);
-                break;
-            case 2: startAnimation(SpellType.POISON);
-                break;
-            case 3: startAnimation(SpellType.SHIELD);
-                break;
-            case 4: startAnimation(SpellType.HEAL);
-                break;
         }
         
         fireSpell(boardGemArray[col][row], matchLevel);
@@ -676,17 +674,36 @@ public class Match3Duels_Game implements Screen {
         case 2: recurringSpell(gem.fireSpell(matchLevel));
         case 3: persistingSpell(gem.fireSpell(matchLevel));
         case 4: modifyHealth(gem.fireSpell(matchLevel));
+        
+        switch(gem.getType()) {
+        case 0: startAnimation(SpellType.FIRE);
+            break;
+        case 1: startAnimation(SpellType.LIGHTNING);
+            break;
+        case 2: startAnimation(SpellType.POISON);
+            break;
+        case 3: startAnimation(SpellType.SHIELD);
+            break;
+        case 4: startAnimation(SpellType.HEAL);
+            break;
+    }
         }
     }
     
     private static void modifyHealth(int health) {
         if(health < 0) {
             health *= -1;
+            enemyHealth -= health;
             enemyHealthBar.setX(enemyHealthBar.getX() 
                     - (enemyHealthBar.getWidth() * health / 100));
         } else {
-            playerHealthBar.setX(playerHealthBar.getX() 
-                    + (playerHealthBar.getWidth() * health / 100));
+            playerHealth += health;
+            if(playerHealth > MAX_HEALTH) {
+                playerHealth = MAX_HEALTH;
+            } else {
+                playerHealthBar.setX(playerHealthBar.getX() 
+                        + (playerHealthBar.getWidth() * health / 100));
+            }
         }
     }
     
@@ -694,8 +711,9 @@ public class Match3Duels_Game implements Screen {
         
     }
     
-    private static void persistingSpell(int effect) {
-        
+    private static void persistingSpell(float effect) {
+        shieldDuration += effect;
+        shieldAnimFired = true;
     }
     
     private static void fillEmptySlots() {
@@ -713,7 +731,7 @@ public class Match3Duels_Game implements Screen {
                     
                     boardGemArray[col][row].remove();
                     boardGemArray[col][row] = newGem();
-                    
+                    /*
                     if(row > 1 && col > 1) {
                         tempType = boardGemArray[row][col].getType();
                         
@@ -729,7 +747,7 @@ public class Match3Duels_Game implements Screen {
                             boardGemArray[row][col] = newGem();
                             tempType = boardGemArray[row][col].getType();
                         }
-                    }
+                    }*/
                     
                     
                     boardGemArray[col][row].setPosition(xPos, yPos);

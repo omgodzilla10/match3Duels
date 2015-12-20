@@ -10,6 +10,8 @@ import com.badlogic.gdx.scenes.scene2d.Touchable;
 public class ShieldGemActor_01 extends GemActor {
     static final int GEM_TYPE = 3;
     
+    final float EFFECT = 1.5f;
+    
     private int spriteXY;
     private int signature;
     private boolean matched;
@@ -101,6 +103,10 @@ public class ShieldGemActor_01 extends GemActor {
     
     @Override
     public int fireSpell(int matchLevel) {
-        return 0;
+        switch (matchLevel) {
+        case 3: return matchLevel;
+        case 4: return matchLevel * 1.5f;
+        case 5: return matchLevel * 2f;
+        }
     }
 }
