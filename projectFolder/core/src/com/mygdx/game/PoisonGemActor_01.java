@@ -10,7 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.Touchable;
 public class PoisonGemActor_01 extends GemActor {
     static final int GEM_TYPE = 2;
     
-    final int EFFECT = -5;
+    final int EFFECT = -2;
     
     private int spriteXY;
     private int signature;

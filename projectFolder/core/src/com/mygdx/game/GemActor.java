@@ -19,4 +19,5 @@ public abstract class GemActor extends Actor{
     public abstract void setInvisible(boolean b);
     public abstract boolean isInvisible();
     public abstract int fireSpell(int matchLevel);
+    public float firePersistSpell(int matchLevel) {return 0;}
 }

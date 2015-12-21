@@ -37,6 +37,9 @@ public class Match3Duels_Game implements Screen {
     /** The default max health for the player and enemy. */
     static final int MAX_HEALTH = 100;
     
+    /** The number of spell casts per firing of a recurring gem. */
+    static final int SPELLS_PER_RECURRING = 2;
+    
     /** The time, in seconds, between frames in an animation. */
     static final float ANIM_DURATION = 0.1f;
     
@@ -44,7 +47,10 @@ public class Match3Duels_Game implements Screen {
     final static float GEM_MOVE_DURATION = 0.15f;
     
     /** The rate at which a spell effect fades out. Higher = faster. */
-    final static float EFFECT_FADE_RATE = 0.01f;
+    final static float EFFECT_FADE_RATE = 0.005f;
+    
+    /** The default duration of a persisting effect. */
+    final static float RECURRING_DURATION = 2f;
     
     /** The maximum number of gems allowed to be in use. */
     final int MAX_GEMS = 5;
@@ -70,6 +76,9 @@ public class Match3Duels_Game implements Screen {
     /** Whether the healGem has been fired or not. */
     private static boolean healAnimFired;
     
+    /** Whether a persisting effect is on or not. */
+    private static boolean recurringEffect;
+    
     /** The amount of moves the player has made. */
     private static int movesMade;
     
@@ -81,6 +90,12 @@ public class Match3Duels_Game implements Screen {
     
     /** The enemy's health. */
     private static int enemyHealth;
+    
+    /** Used to track how many times a recurring spell has been fired in its lifetime. */
+    private static int recurringFired;
+    
+    /** The length of the poison effect, measured in number of attacks. */
+    private static int poisonDuration;
     
     /** The R color of the background. */
     private static float rCol;
@@ -99,6 +114,12 @@ public class Match3Duels_Game implements Screen {
     
     /** The length of the shield effect. */
     private static float shieldDuration;
+    
+    /** A timer for the poison effect. */
+    private static float poisonTimer;
+    
+    /** The damage done by each poison "flash". */
+    private static float poisonDamage;
     
     /** An array for each of the gem actors on the board. */
     private static GemActor[][] boardGemArray;
@@ -158,8 +179,12 @@ public class Match3Duels_Game implements Screen {
         movesMade = 0;
         elapsedTime = 0;
         shieldTimer = 0;
-        shieldDuration = 0;
+        poisonTimer = 0;
+        poisonDuration = 0;
+        recurringFired = 0;
         potCount = MAX_POTS;
+        
+        recurringEffect = false;
         
         rCol = 1f;
         gCol = 1f;
@@ -248,25 +273,39 @@ public class Match3Duels_Game implements Screen {
         elapsedTime += delta;
         
         if(Gdx.input.isKeyJustPressed(Keys.SPACE)) {
-            if(potCount > 0) {
-                movesMade = 0;
-                potCount--;
-                fillEmptySlots();
-                checkMatches();
-                ((PotionCounter) potionCounter).setNewSprite(potCount);
-            }
+            usePotion();
         }
         
+        //For debug.
         if(Gdx.input.isKeyJustPressed(Keys.CONTROL_LEFT)) {
             movesMade = 0;
             fillEmptySlots();
             checkMatches();
         }
         
+        if(recurringEffect)
+            recurringEffect(delta);
+        
         gameStage.act(delta);
         gameStage.draw();
         
         fireAnimations();
+    }
+    
+    private static void usePotion() {
+        if(potCount > 0) {
+            //Reset moves made and lower potion count.
+            movesMade = 0;
+            potCount--;
+            
+            //Cancel recurring and persisting effects.
+            recurringEffect = false;
+            //persistingEffect = false;
+            
+            fillEmptySlots();
+            checkMatches();
+            ((PotionCounter) potionCounter).setNewSprite(potCount);
+        }
     }
     
     private static void fireAnimations() {
@@ -365,8 +404,8 @@ public class Match3Duels_Game implements Screen {
         switch(spellType) {
         case FIRE: 
             fireAnimFired = true;
-            gCol = 0.7f;
-            bCol = 0.7f;
+            gCol = 0.6f;
+            bCol = 0.6f;
             
             fireGemSound.play();
             break;
@@ -393,7 +432,7 @@ public class Match3Duels_Game implements Screen {
         case SHIELD:
             shieldAnimFired = true;
             shieldTimer = 0;
-            bCol = 0.7f;
+            bCol = 0.6f;
             elapsedTime = 0;
             
             shieldGemSound.play();
@@ -401,8 +440,8 @@ public class Match3Duels_Game implements Screen {
             
         case HEAL:
             healAnimFired = true;
-            rCol = 0.7f;
-            bCol = 0.7f;
+            rCol = 0.6f;
+            bCol = 0.6f;
             elapsedTime = 0;
             
             healGemSound.play();
@@ -670,23 +709,26 @@ public class Match3Duels_Game implements Screen {
         
         switch (type) {
         case 0: modifyHealth(gem.fireSpell(matchLevel));
+            break;
         case 1: modifyHealth(gem.fireSpell(matchLevel));
+            break;
         case 2: recurringSpell(gem.fireSpell(matchLevel));
-        case 3: persistingSpell(gem.fireSpell(matchLevel));
+            break;
+        case 3: persistingSpell(gem.firePersistSpell(matchLevel));
+            break;
         case 4: modifyHealth(gem.fireSpell(matchLevel));
+            break;
+        }
         
         switch(gem.getType()) {
         case 0: startAnimation(SpellType.FIRE);
             break;
         case 1: startAnimation(SpellType.LIGHTNING);
             break;
-        case 2: startAnimation(SpellType.POISON);
-            break;
         case 3: startAnimation(SpellType.SHIELD);
             break;
         case 4: startAnimation(SpellType.HEAL);
             break;
-    }
         }
     }
     
@@ -707,13 +749,38 @@ public class Match3Duels_Game implements Screen {
         }
     }
     
-    private static void recurringSpell(int health) {
-        
-    }
-    
     private static void persistingSpell(float effect) {
         shieldDuration += effect;
         shieldAnimFired = true;
+    }
+    
+    /** Called once when a recurring spell is cast. */
+    private static void recurringSpell(int health) {
+        poisonDamage += health;
+        poisonDuration += SPELLS_PER_RECURRING;
+        recurringEffect = true;
+    }
+    
+    /** Called each frame while a recurring effect lasts. */
+    private static void recurringEffect(float delta) {
+        poisonTimer += delta;
+        
+        if(poisonTimer >= RECURRING_DURATION / SPELLS_PER_RECURRING) {
+            poisonTimer = 0;
+            recurringFired++;
+            modifyHealth((int)poisonDamage);
+            System.out.println("Poisoned! " + poisonDamage + " dmg, " + recurringFired + " / " 
+                    + poisonDuration + " attacks.");
+            startAnimation(SpellType.POISON);
+        }
+        
+        if(recurringFired >= poisonDuration) {
+            poisonDuration = 0;
+            poisonDamage = 0;
+            recurringFired = 0;
+            recurringEffect = false;
+            System.out.println("End poison!");
+        }
     }
     
     private static void fillEmptySlots() {
