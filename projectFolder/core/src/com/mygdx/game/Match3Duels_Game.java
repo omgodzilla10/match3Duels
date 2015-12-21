@@ -79,6 +79,9 @@ public class Match3Duels_Game implements Screen {
     /** Whether a persisting effect is on or not. */
     private static boolean recurringEffect;
     
+    /** Whether a shield is deployed or not. */
+    private static boolean shieldEffect;
+    
     /** The amount of moves the player has made. */
     private static int movesMade;
     
@@ -185,6 +188,7 @@ public class Match3Duels_Game implements Screen {
         potCount = MAX_POTS;
         
         recurringEffect = false;
+        shieldEffect = false;
         
         rCol = 1f;
         gCol = 1f;
@@ -358,6 +362,8 @@ public class Match3Duels_Game implements Screen {
         
         if(shieldAnimFired) {
             if(shieldTimer > shieldDuration) {
+                shieldEffect = false;
+                
                 if(bCol < 1) {
                     if(elapsedTime > 0.01f) {
                         elapsedTime = 0;
@@ -692,7 +698,7 @@ public class Match3Duels_Game implements Screen {
         
         
         
-        fireSpell(boardGemArray[col][row], matchLevel);
+        fireSpell(boardGemArray[col][row], matchLevel, true);
     }
     
     private static void hideMatchVertical(int col, int row, int matchLevel) {
@@ -701,22 +707,29 @@ public class Match3Duels_Game implements Screen {
             boardGemArray[col][row + i].setInvisible(true);
         }
         
-        fireSpell(boardGemArray[col][row], matchLevel);
+        fireSpell(boardGemArray[col][row], matchLevel, true);
     }
     
-    private static void fireSpell(GemActor gem, int matchLevel) {
+    /**
+     * Called whenever a spell is fired from the board.
+     * 
+     * @param gem - The gem that was matched.
+     * @param matchLevel - The number of gems in the match.
+     * @param player - Whether the spell was cast by the player or not.
+     */
+    private static void fireSpell(GemActor gem, int matchLevel, boolean player) {
         int type = gem.getType();
         
         switch (type) {
-        case 0: modifyHealth(gem.fireSpell(matchLevel));
+        case 0: modifyHealth(gem.fireSpell(matchLevel), player);
             break;
-        case 1: modifyHealth(gem.fireSpell(matchLevel));
+        case 1: modifyHealth(gem.fireSpell(matchLevel), player);
             break;
         case 2: recurringSpell(gem.fireSpell(matchLevel));
             break;
         case 3: persistingSpell(gem.firePersistSpell(matchLevel));
             break;
-        case 4: modifyHealth(gem.fireSpell(matchLevel));
+        case 4: modifyHealth(gem.fireSpell(matchLevel), player);
             break;
         }
         
@@ -732,19 +745,42 @@ public class Match3Duels_Game implements Screen {
         }
     }
     
-    private static void modifyHealth(int health) {
-        if(health < 0) {
-            health *= -1;
-            enemyHealth -= health;
-            enemyHealthBar.setX(enemyHealthBar.getX() 
-                    - (enemyHealthBar.getWidth() * health / 100));
-        } else {
-            playerHealth += health;
-            if(playerHealth > MAX_HEALTH) {
-                playerHealth = MAX_HEALTH;
+    /**
+     * Called whenever a spell deals damage or heals.
+     * 
+     * @param health - The health that is removed or added to a healthbar.
+     * @param player - Whether the attack was cast by the player or not.
+     */
+    private static void modifyHealth(int health, boolean player) {
+        if(player) {
+            if(health < 0) {
+                health *= -1;
+                enemyHealth -= health;
+                enemyHealthBar.setX(enemyHealthBar.getX() 
+                        - (enemyHealthBar.getWidth() * health / 100));
             } else {
+                playerHealth += health;
+                if(playerHealth > MAX_HEALTH) {
+                    playerHealth = MAX_HEALTH;
+                } else {
+                    playerHealthBar.setX(playerHealthBar.getX() 
+                            + (playerHealthBar.getWidth() * health / 100));
+                }
+            }
+        } else {
+            if(health < 0) {
+                health *= -1;
+                playerHealth -= health;
                 playerHealthBar.setX(playerHealthBar.getX() 
-                        + (playerHealthBar.getWidth() * health / 100));
+                        - (playerHealthBar.getWidth() * health / 100));
+            } else {
+                enemyHealth += health;
+                if(enemyHealth > MAX_HEALTH) {
+                    enemyHealth = MAX_HEALTH;
+                } else {
+                    enemyHealthBar.setX(enemyHealthBar.getX() 
+                            + (enemyHealthBar.getWidth() * health / 100));
+                }
             }
         }
     }
@@ -752,6 +788,7 @@ public class Match3Duels_Game implements Screen {
     private static void persistingSpell(float effect) {
         shieldDuration += effect;
         shieldAnimFired = true;
+        shieldEffect = true;
     }
     
     /** Called once when a recurring spell is cast. */
@@ -768,7 +805,7 @@ public class Match3Duels_Game implements Screen {
         if(poisonTimer >= RECURRING_DURATION / SPELLS_PER_RECURRING) {
             poisonTimer = 0;
             recurringFired++;
-            modifyHealth((int)poisonDamage);
+            modifyHealth((int)poisonDamage, true);
             System.out.println("Poisoned! " + poisonDamage + " dmg, " + recurringFired + " / " 
                     + poisonDuration + " attacks.");
             startAnimation(SpellType.POISON);
