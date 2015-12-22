@@ -110,8 +110,8 @@ public class ShieldGemActor_01 extends GemActor {
     public float firePersistSpell(int matchLevel) {
         switch (matchLevel) {
         case 3: return EFFECT;
-        case 4: return EFFECT * 1.5f;
-        default: return EFFECT * 2;
+        case 4: return EFFECT * 2f;
+        default: return EFFECT * 3f;
         }
     }
 }

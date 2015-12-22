@@ -29,7 +29,7 @@ public class Match3Duels_Game implements Screen {
     static final int SPRITE_PADDING = 10;
     
     /** The padding (in pixels) beneath the match-3 board. */
-    final int BOTTOM_PADDING = Gdx.graphics.getHeight() / 9;
+    final int BOTTOM_PADDING = Gdx.graphics.getHeight() / 14;
     
     /** The speed that the fire spell animation moves along the y axis. */
     static final int FIRE_SPELL_SPEED = 400;
@@ -135,6 +135,12 @@ public class Match3Duels_Game implements Screen {
     
     /** The actor for the enemy's health bar. */
     private static Actor enemyHealthBar;
+    
+    /** The player's shield bar. */
+    private static Actor playerStatusBar;
+    
+    /** The enemy's shield bar. */
+    private static Actor enemyStatusBar;
     
     /** The stage on which the board and UI elements will appear. */
     private static Stage gameStage;
@@ -254,9 +260,22 @@ public class Match3Duels_Game implements Screen {
         playerHealth = MAX_HEALTH;
         enemyHealth = MAX_HEALTH;
         
+        playerStatusBar = new StatusBarActor();
+        enemyStatusBar = new StatusBarActor();
+        
+        playerStatusBar.setPosition(SPRITE_PADDING, boardGemArray[0][BOARD_ROWS - 1].getY()
+                + boardGemArray[0][BOARD_ROWS - 1].getHeight() + SPRITE_PADDING);
+        enemyStatusBar.setPosition(SPRITE_PADDING, enemyHealthBar.getY()
+                - enemyStatusBar.getHeight() - SPRITE_PADDING);
+        
+        playerStatusBar.setSize(screenWidth - (2 * SPRITE_PADDING), playerStatusBar.getHeight());
+        enemyStatusBar.setSize(screenWidth - (2 * SPRITE_PADDING), enemyStatusBar.getHeight());
+        
         gameStage.addActor(potionCounter);
         gameStage.addActor(playerHealthBar);
         gameStage.addActor(enemyHealthBar);
+        gameStage.addActor(playerStatusBar);
+        gameStage.addActor(enemyStatusBar);
         
         //Initialize all sound effects.
         lightningGemSound = Gdx.audio.newSound(Gdx.files.internal("zap_01.wav"));
@@ -294,6 +313,13 @@ public class Match3Duels_Game implements Screen {
         gameStage.draw();
         
         fireAnimations();
+        
+        if(shieldEffect)
+            ((StatusBarActor)playerStatusBar).updateShield(delta, shieldDuration);
+        else ((StatusBarActor)playerStatusBar).update(delta);
+        
+        //Temp
+        ((StatusBarActor)enemyStatusBar).update(delta);
     }
     
     private static void usePotion() {
@@ -733,15 +759,18 @@ public class Match3Duels_Game implements Screen {
             break;
         }
         
-        switch(gem.getType()) {
-        case 0: startAnimation(SpellType.FIRE);
-            break;
-        case 1: startAnimation(SpellType.LIGHTNING);
-            break;
-        case 3: startAnimation(SpellType.SHIELD);
-            break;
-        case 4: startAnimation(SpellType.HEAL);
-            break;
+        if(player) {
+            if(gem.getType() == 3 || gem.getType() == 4) {
+                ((StatusBarActor)playerStatusBar).setStatus(gem.getType());
+            } else {
+                ((StatusBarActor)enemyStatusBar).setStatus(gem.getType());
+            }
+        } else {
+            if(gem.getType() == 3 || gem.getType() == 4) {
+                ((StatusBarActor)enemyStatusBar).setStatus(gem.getType());
+            } else {
+                ((StatusBarActor)playerStatusBar).setStatus(gem.getType());
+            }
         }
     }
     

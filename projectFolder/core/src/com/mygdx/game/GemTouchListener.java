@@ -38,11 +38,6 @@ public class GemTouchListener extends InputListener {
     
     @Override
     public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-        System.out.println("touch down!"); //Debug
-        System.out.println(signature);
-        
-        System.out.println("Type: " + ((GemActor)actor).getType());
-        
         originX = x;
         originY = y;
         return true;
@@ -50,8 +45,6 @@ public class GemTouchListener extends InputListener {
     
     @Override
     public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
-        System.out.println("touch up!"); //Debug
-        
         float offsetX;
         float offsetY;
         float dragAngle;
@@ -70,22 +63,18 @@ public class GemTouchListener extends InputListener {
             
             //Move right.
             if(dragAngle <= MAX_ANG_QUAD_01 || dragAngle >= MIN_ANG_QUAD_01) {
-                System.out.println("Move right!"); //Debug
                 Match3Duels_Game.moveGem(DIR_RIGHT, signature);
             }
             //Move up.
             else if(dragAngle <= MAX_ANG_QUAD_02 && dragAngle >= MIN_ANG_QUAD_02) {
-                System.out.println("Move up!");
                 Match3Duels_Game.moveGem(DIR_UP, signature);
             }
             //Move left.
             else if(dragAngle <= MAX_ANG_QUAD_03 && dragAngle >= MIN_ANG_QUAD_03) {
-                System.out.println("Move left!");
                 Match3Duels_Game.moveGem(DIR_LEFT, signature);
             }
             //Move down.
             else if(dragAngle <= MAX_ANG_QUAD_04 && dragAngle >= MIN_ANG_QUAD_04) {
-                System.out.println("Move down!");
                 Match3Duels_Game.moveGem(DIR_DOWN, signature);
             }
         }
