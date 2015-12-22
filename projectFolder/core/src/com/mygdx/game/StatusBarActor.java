@@ -10,6 +10,9 @@ public class StatusBarActor extends Actor{
     final float STATUS_DURATION = 0.5f;
     
     float timer;
+    float tempTimer;
+    float tempDuration;
+    
     boolean shieldOn;
     
     private Sprite sprite;
@@ -23,6 +26,8 @@ public class StatusBarActor extends Actor{
     
     public StatusBarActor() {
         timer = 0;
+        tempTimer = 0;
+        tempDuration = 0;
         shieldOn = false;
         
         disabledTex = new Texture(Gdx.files.internal("statusBar_empty_01.png"));
@@ -80,6 +85,16 @@ public class StatusBarActor extends Actor{
         timer += delta;
         shieldOn = true;
         System.out.println("Updating shield!");
+        
+        //If the shield is on but another effect is used (ie. heal).
+        if(sprite.getTexture() != shieldTex) {
+            tempTimer += delta;
+            
+            if(tempTimer > STATUS_DURATION) {
+                tempTimer = 0;
+                setStatus(ShieldGemActor_01.GEM_TYPE);
+            }
+        }
         
         if(timer > shieldDuration) {
             System.out.println("Finished shield.");
