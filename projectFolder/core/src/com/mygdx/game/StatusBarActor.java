@@ -13,8 +13,6 @@ public class StatusBarActor extends Actor{
     float tempTimer;
     float tempDuration;
     
-    boolean shieldOn;
-    
     private Sprite sprite;
     
     private Texture disabledTex;
@@ -28,7 +26,6 @@ public class StatusBarActor extends Actor{
         timer = 0;
         tempTimer = 0;
         tempDuration = 0;
-        shieldOn = false;
         
         disabledTex = new Texture(Gdx.files.internal("statusBar_empty_01.png"));
         fireTex = new Texture(Gdx.files.internal("statusBar_fire_01.png"));
@@ -60,17 +57,10 @@ public class StatusBarActor extends Actor{
     public void update(float delta) {
         if(sprite.getTexture() != disabledTex) {
             timer += delta;
-            System.out.println("Update!");
             
             if(timer > STATUS_DURATION) {
-                System.out.println("Update finished!");
+                sprite.setTexture(disabledTex);
                 timer = 0;
-                if(shieldOn) {
-                    sprite.setTexture(shieldTex);
-                    System.out.println("Switching back to shield.");
-                } else {disableStatus();
-                    System.out.println("Finished update, not switching to shield.");
-                }
             }
         }
     }
@@ -83,8 +73,6 @@ public class StatusBarActor extends Actor{
      */
     public void updateShield(float delta, float shieldDuration) {
         timer += delta;
-        shieldOn = true;
-        System.out.println("Updating shield!");
         
         //If the shield is on but another effect is used (ie. heal).
         if(sprite.getTexture() != shieldTex) {
@@ -97,9 +85,7 @@ public class StatusBarActor extends Actor{
         }
         
         if(timer > shieldDuration) {
-            System.out.println("Finished shield.");
             timer = 0;
-            shieldOn = false;
             disableStatus();
         }
     }

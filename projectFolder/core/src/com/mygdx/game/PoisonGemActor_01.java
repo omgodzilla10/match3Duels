@@ -1,10 +1,10 @@
 package com.mygdx.game;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 
 public class PoisonGemActor_01 extends GemActor {
@@ -19,6 +19,7 @@ public class PoisonGemActor_01 extends GemActor {
     private Sprite gemSprite;
     
     private GemTouchListener listener;
+    private Sound sound;
     
     public PoisonGemActor_01() {
         spriteXY = (Gdx.graphics.getWidth() / Match3Duels_Game.BOARD_ROWS) 
@@ -30,6 +31,7 @@ public class PoisonGemActor_01 extends GemActor {
         gemSprite.setSize(spriteXY, spriteXY);
         
         listener = new GemTouchListener(this, signature);
+        sound = Gdx.audio.newSound(Gdx.files.internal("poison_01.wav"));
         
         setBounds(gemSprite.getX(), gemSprite.getY(), gemSprite.getWidth(), 
                 gemSprite.getHeight());
@@ -106,7 +108,12 @@ public class PoisonGemActor_01 extends GemActor {
         switch(matchLevel) {
         case 3: return EFFECT;
         case 4: return EFFECT * 2;
-        default: return EFFECT * 3;
+        default: return EFFECT * 4;
         }
+    }
+    
+    @Override
+    public void playSound() {
+        sound.play();
     }
 }

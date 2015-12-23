@@ -2,6 +2,7 @@ package com.mygdx.game;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -11,7 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.Touchable;
 public class FireGemActor_01 extends GemActor {
     static final int GEM_TYPE = 0;
     
-    final int EFFECT = -10;
+    final int EFFECT = -15;
     
     private int spriteXY;
     private int signature;
@@ -20,6 +21,7 @@ public class FireGemActor_01 extends GemActor {
     private Sprite gemSprite;
     
     private GemTouchListener listener;
+    private Sound sound;
     
     public FireGemActor_01() {
         spriteXY = (Gdx.graphics.getWidth() / Match3Duels_Game.BOARD_ROWS) 
@@ -30,6 +32,7 @@ public class FireGemActor_01 extends GemActor {
         gemSprite = new Sprite(new Texture(Gdx.files.internal("gem_fire_01.png")));
         
         listener = new GemTouchListener(this, signature);
+        sound = Gdx.audio.newSound(Gdx.files.internal("fire_01.wav"));
         
         gemSprite.setSize(spriteXY, spriteXY);
         setBounds(gemSprite.getX(), gemSprite.getY(), gemSprite.getWidth(), 
@@ -109,5 +112,10 @@ public class FireGemActor_01 extends GemActor {
         case 4: return EFFECT * 2;
         default: return EFFECT * 3;
         }
+    }
+    
+    @Override
+    public void playSound() {
+        sound.play();
     }
 }

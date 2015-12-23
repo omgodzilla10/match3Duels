@@ -82,6 +82,12 @@ public class Match3Duels_Game implements Screen {
     /** Whether a shield is deployed or not. */
     private static boolean shieldEffect;
     
+    /** Whether the player has a poisoned status or not. */
+    private static boolean playerPoisoned;
+    
+    /** Whether the enemy has a poisoned status or not. */
+    private static boolean enemyPoisoned;
+    
     /** The amount of moves the player has made. */
     private static int movesMade;
     
@@ -154,21 +160,6 @@ public class Match3Duels_Game implements Screen {
     /** Used to animate the gem being swapped with the moved gem. */
     private static MoveToAction gemSwapAction;
     
-    /** A fireball sound effect. */
-    private static Sound fireGemSound;
-    
-    /** A "zap" sound effect. */
-    private static Sound lightningGemSound;
-    
-    /** The poison sound effect. */
-    private static Sound poisonGemSound;
-    
-    /** The shield sound effect. */
-    private static Sound shieldGemSound;
-    
-    /** The heal sound effect. */
-    private static Sound healGemSound;
-    
     private enum SpellType {
         FIRE,
         LIGHTNING,
@@ -195,6 +186,8 @@ public class Match3Duels_Game implements Screen {
         
         recurringEffect = false;
         shieldEffect = false;
+        playerPoisoned = false;
+        enemyPoisoned = false;
         
         rCol = 1f;
         gCol = 1f;
@@ -277,13 +270,6 @@ public class Match3Duels_Game implements Screen {
         gameStage.addActor(playerStatusBar);
         gameStage.addActor(enemyStatusBar);
         
-        //Initialize all sound effects.
-        lightningGemSound = Gdx.audio.newSound(Gdx.files.internal("zap_01.wav"));
-        fireGemSound = Gdx.audio.newSound(Gdx.files.internal("fire_01.wav"));
-        poisonGemSound = Gdx.audio.newSound(Gdx.files.internal("poison_01.wav"));
-        shieldGemSound = Gdx.audio.newSound(Gdx.files.internal("shield_01.wav"));
-        healGemSound = Gdx.audio.newSound(Gdx.files.internal("heal_01.wav"));
-        
         //Initial check for matches at game execution.
         checkMatches();
     }
@@ -306,8 +292,12 @@ public class Match3Duels_Game implements Screen {
             checkMatches();
         }
         
-        if(recurringEffect)
-            recurringEffect(delta);
+        if(recurringEffect) {
+            if(playerPoisoned)
+                recurringEffect(delta, false);
+            else if (enemyPoisoned)
+                recurringEffect(delta, true);
+        }
         
         gameStage.act(delta);
         gameStage.draw();
@@ -423,6 +413,7 @@ public class Match3Duels_Game implements Screen {
         }
     }
     
+    /*
     private static void startAnimation(SpellType spellType) {
         rCol = 1;
         gCol = 1;
@@ -479,7 +470,7 @@ public class Match3Duels_Game implements Screen {
             healGemSound.play();
             break;
         }
-    }
+    }*/
     
     
     protected static void moveGem(int dir, int signature) {
@@ -722,8 +713,6 @@ public class Match3Duels_Game implements Screen {
             boardGemArray[col + i][row].setInvisible(true);
         }
         
-        
-        
         fireSpell(boardGemArray[col][row], matchLevel, true);
     }
     
@@ -751,25 +740,27 @@ public class Match3Duels_Game implements Screen {
             break;
         case 1: modifyHealth(gem.fireSpell(matchLevel), player);
             break;
-        case 2: recurringSpell(gem.fireSpell(matchLevel));
+        case 2: recurringSpell(gem.fireSpell(matchLevel), player);
             break;
-        case 3: persistingSpell(gem.firePersistSpell(matchLevel));
+        case 3: persistingSpell(gem.firePersistSpell(matchLevel), player);
             break;
         case 4: modifyHealth(gem.fireSpell(matchLevel), player);
             break;
         }
         
-        if(player) {
-            if(gem.getType() == 3 || gem.getType() == 4) {
-                ((StatusBarActor)playerStatusBar).setStatus(gem.getType());
+        if(gem.getType() != 2) {
+            if(player) {
+                if(gem.getType() == 3 || gem.getType() == 4) {
+                    ((StatusBarActor)playerStatusBar).setStatus(gem.getType());
+                } else {
+                    ((StatusBarActor)enemyStatusBar).setStatus(gem.getType());
+                }
             } else {
-                ((StatusBarActor)enemyStatusBar).setStatus(gem.getType());
-            }
-        } else {
-            if(gem.getType() == 3 || gem.getType() == 4) {
-                ((StatusBarActor)enemyStatusBar).setStatus(gem.getType());
-            } else {
-                ((StatusBarActor)playerStatusBar).setStatus(gem.getType());
+                if(gem.getType() == 3 || gem.getType() == 4) {
+                    ((StatusBarActor)enemyStatusBar).setStatus(gem.getType());
+                } else {
+                    ((StatusBarActor)playerStatusBar).setStatus(gem.getType());
+                }
             }
         }
     }
@@ -814,30 +805,37 @@ public class Match3Duels_Game implements Screen {
         }
     }
     
-    private static void persistingSpell(float effect) {
+    private static void persistingSpell(float effect, boolean player) {
         shieldDuration += effect;
         shieldAnimFired = true;
         shieldEffect = true;
     }
     
     /** Called once when a recurring spell is cast. */
-    private static void recurringSpell(int health) {
+    private static void recurringSpell(int health, boolean player) {
         poisonDamage += health;
         poisonDuration += SPELLS_PER_RECURRING;
         recurringEffect = true;
+        
+        if(player)
+            enemyPoisoned = true;
+        else playerPoisoned = true;
     }
     
     /** Called each frame while a recurring effect lasts. */
-    private static void recurringEffect(float delta) {
+    private static void recurringEffect(float delta, boolean player) {
         poisonTimer += delta;
         
         if(poisonTimer >= RECURRING_DURATION / SPELLS_PER_RECURRING) {
             poisonTimer = 0;
             recurringFired++;
-            modifyHealth((int)poisonDamage, true);
+            modifyHealth((int)poisonDamage, player);
             System.out.println("Poisoned! " + poisonDamage + " dmg, " + recurringFired + " / " 
                     + poisonDuration + " attacks.");
-            startAnimation(SpellType.POISON);
+            //startAnimation(SpellType.POISON);
+            if(player)
+                ((StatusBarActor)enemyStatusBar).setStatus(PoisonGemActor_01.GEM_TYPE);
+            else ((StatusBarActor)playerStatusBar).setStatus(PoisonGemActor_01.GEM_TYPE);
         }
         
         if(recurringFired >= poisonDuration) {
@@ -846,6 +844,10 @@ public class Match3Duels_Game implements Screen {
             recurringFired = 0;
             recurringEffect = false;
             System.out.println("End poison!");
+            
+            if(player)
+                enemyPoisoned = false;
+            else playerPoisoned = false;
         }
     }
     

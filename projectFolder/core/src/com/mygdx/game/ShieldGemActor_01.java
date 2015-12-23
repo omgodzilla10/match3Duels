@@ -1,6 +1,7 @@
 package com.mygdx.game;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -19,6 +20,7 @@ public class ShieldGemActor_01 extends GemActor {
     private Sprite gemSprite;
     
     private GemTouchListener listener;
+    private Sound sound;
     
     public ShieldGemActor_01() {
         spriteXY = (Gdx.graphics.getWidth() / Match3Duels_Game.BOARD_ROWS) 
@@ -30,6 +32,7 @@ public class ShieldGemActor_01 extends GemActor {
         invisible = false;
         
         listener = new GemTouchListener(this, signature);
+        sound = Gdx.audio.newSound(Gdx.files.internal("shield_01.wav"));
         
         setBounds(gemSprite.getX(), gemSprite.getY(), gemSprite.getWidth(), 
                 gemSprite.getHeight());
@@ -113,5 +116,10 @@ public class ShieldGemActor_01 extends GemActor {
         case 4: return EFFECT * 2f;
         default: return EFFECT * 3f;
         }
+    }
+    
+    @Override
+    public void playSound() {
+        sound.play();
     }
 }

@@ -1,6 +1,7 @@
 package com.mygdx.game;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -21,6 +22,7 @@ public class HealGemActor_01 extends GemActor {
     private Sprite gemSprite;
     
     private GemTouchListener listener;
+    private Sound sound;
     
     public HealGemActor_01() {
         spriteXY = (Gdx.graphics.getWidth() / Match3Duels_Game.BOARD_ROWS) 
@@ -32,6 +34,7 @@ public class HealGemActor_01 extends GemActor {
         gemSprite.setSize(spriteXY, spriteXY);
         
         listener = new GemTouchListener(this, signature);
+        sound = Gdx.audio.newSound(Gdx.files.internal("heal_01.wav"));
         
         setBounds(gemSprite.getX(), gemSprite.getY(), gemSprite.getWidth(), 
                 gemSprite.getHeight());
@@ -110,5 +113,10 @@ public class HealGemActor_01 extends GemActor {
         case 4: return (int) (EFFECT * 1.5);
         default: return EFFECT * 5;
         }
+    }
+    
+    @Override
+    public void playSound() {
+        sound.play();
     }
 }
