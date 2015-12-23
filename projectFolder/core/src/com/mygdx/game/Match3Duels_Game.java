@@ -88,6 +88,9 @@ public class Match3Duels_Game implements Screen {
     /** Whether the enemy has a poisoned status or not. */
     private static boolean enemyPoisoned;
     
+    /** Whether or not a match has been found after the board was cleared. */
+    private static boolean firstMatch;
+    
     /** The amount of moves the player has made. */
     private static int movesMade;
     
@@ -237,16 +240,6 @@ public class Match3Duels_Game implements Screen {
             }
         }
         
-        //Initialize all extra UI elements and draw them to the screen.
-        /*potionCounter = new PotionCounter();
-        playerChar.healthBar = new HealthBarActor();
-        enemychar.healthBar = new HealthBarActor();
-        
-        playerChar.healthBar.setPosition(0, 0);
-        
-        playerHealth = MAX_HEALTH;
-        enemyHealth = MAX_HEALTH; */
-        
         playerChar = new Player(gameStage);
         enemyChar = new Player(gameStage);
         
@@ -263,15 +256,12 @@ public class Match3Duels_Game implements Screen {
         playerChar.statusBar.setSize(screenWidth - (2 * SPRITE_PADDING), playerChar.statusBar.getHeight());
         enemyChar.statusBar.setSize(screenWidth - (2 * SPRITE_PADDING), enemyChar.statusBar.getHeight());
         
-        /*
-        gameStage.addActor(potionCounter);
-        gameStage.addActor(playerChar.healthBar);
-        gameStage.addActor(enemychar.healthBar);
-        gameStage.addActor(playerChar.statusBar);
-        gameStage.addActor(enemyChar.statusBar);*/
-        
         //Initial check for matches at game execution.
-        checkMatches();
+        do {
+            firstMatch = false;
+            fillEmptySlots();
+            checkMatches(true);
+        } while (firstMatch);
     }
     
     @Override
@@ -289,7 +279,7 @@ public class Match3Duels_Game implements Screen {
         if(Gdx.input.isKeyJustPressed(Keys.CONTROL_LEFT)) {
             movesMade = 0;
             fillEmptySlots();
-            checkMatches();
+            checkMatches(false);
         }
         
         if(recurringEffect) {
@@ -316,15 +306,20 @@ public class Match3Duels_Game implements Screen {
         if(potCount > 0) {
             //Reset moves made and lower potion count.
             movesMade = 0;
-            potCount--;
             
             //Cancel recurring and persisting effects.
             recurringEffect = false;
             //persistingEffect = false;
             
+            enemyPoisoned = false;
+            poisonDuration = 0;
+            poisonDamage = 0;
+            poisonTimer = 0;
+            recurringFired = 0;
             fillEmptySlots();
-            checkMatches();
-            ((PotionCounter) potionCounter).setNewSprite(potCount);
+            checkMatches(false);
+            
+            //((PotionCounter) potionCounter).setNewSprite(potCount);
         }
     }
     
@@ -478,25 +473,25 @@ public class Match3Duels_Game implements Screen {
             switch (dir) {
             case GemTouchListener.DIR_RIGHT: 
                 moveGemRight(signature);
-                checkMatches();
+                checkMatches(false);
                 movesMade++;
                 break;
                 
             case GemTouchListener.DIR_UP:
                 moveGemUp(signature);
-                checkMatches();
+                checkMatches(false);
                 movesMade++;
                 break;
                 
             case GemTouchListener.DIR_LEFT:
                 moveGemLeft(signature);
-                checkMatches();
+                checkMatches(false);
                 movesMade++;
                 break;
                 
             case GemTouchListener.DIR_DOWN:
                 moveGemDown(signature);
-                checkMatches();
+                checkMatches(false);
                 movesMade++;
                 break;
             }
@@ -655,12 +650,17 @@ public class Match3Duels_Game implements Screen {
         return col;
     }
     
-    private static void checkMatches() {
-        checkMatchesHorizontal();
-        checkMatchesVertical();
+    /**
+     * Checks for vertical and horizontal matches across the match-3 board.
+     * 
+     * @param newBoard - If the board has been reset (prevents initial matches.)
+     */
+    private static void checkMatches(boolean newBoard) {
+        checkMatchesHorizontal(newBoard);
+        checkMatchesVertical(newBoard);
     }
     
-    private static void checkMatchesHorizontal() {
+    private static void checkMatchesHorizontal(boolean newBoard) {
         int matchLevel;
         
         for(int col = 0; col < BOARD_ROWS; col++) {
@@ -677,14 +677,14 @@ public class Match3Duels_Game implements Screen {
                     }
                     
                     if(matchLevel >= 3) {
-                        hideMatchHorizontal(col, row, matchLevel);
+                        hideMatchHorizontal(col, row, matchLevel, newBoard);
                     }
                 }
             }
         }
     }
     
-    private static void checkMatchesVertical() {
+    private static void checkMatchesVertical(boolean newBoard) {
         int matchLevel;
         
         for(int col = 0; col < BOARD_ROWS; col++) {
@@ -700,29 +700,33 @@ public class Match3Duels_Game implements Screen {
                     }
                     
                     if(matchLevel >= 3) {
-                        hideMatchVertical(col, row, matchLevel);
+                        hideMatchVertical(col, row, matchLevel, newBoard);
                     }
                 }
             }
         }
     }
     
-    private static void hideMatchHorizontal(int col, int row, int matchLevel) {
+    private static void hideMatchHorizontal(int col, int row, int matchLevel, boolean newBoard) {
         //For each gem in the match
         for(int i = 0; i < matchLevel; i++) {
             boardGemArray[col + i][row].setInvisible(true);
         }
         
-        fireSpell(boardGemArray[col][row], matchLevel, true);
+        if(!newBoard)
+            fireSpell(boardGemArray[col][row], matchLevel, true);
+        else firstMatch = true;
     }
     
-    private static void hideMatchVertical(int col, int row, int matchLevel) {
+    private static void hideMatchVertical(int col, int row, int matchLevel, boolean newBoard) {
         //For each gem in the match
         for(int i = 0; i < matchLevel; i++) {
             boardGemArray[col][row + i].setInvisible(true);
         }
         
-        fireSpell(boardGemArray[col][row], matchLevel, true);
+        if(!newBoard)
+            fireSpell(boardGemArray[col][row], matchLevel, true);
+        else firstMatch = true;
     }
     
     /**
@@ -749,6 +753,8 @@ public class Match3Duels_Game implements Screen {
         }
         
         if(gem.getType() != 2) {
+            gem.playSound();
+            
             if(player) {
                 if(gem.getType() == 3 || gem.getType() == 4) {
                     ((StatusBarActor)playerChar.statusBar).setStatus(gem.getType());
@@ -822,22 +828,28 @@ public class Match3Duels_Game implements Screen {
         else playerPoisoned = true;
     }
     
-    /** Called each frame while a recurring effect lasts. */
+    /** Called each frame while a recurring effect lasts.
+     * 
+     * @param delta - The time between frames
+     * @param player - Whether or not the spell was cast by a player.
+     */
     private static void recurringEffect(float delta, boolean player) {
         poisonTimer += delta;
         
+        //Cast poison
         if(poisonTimer >= RECURRING_DURATION / SPELLS_PER_RECURRING) {
+            new PoisonGemActor_01().playSound();
+            modifyHealth((int)poisonDamage, player);
+            
             poisonTimer = 0;
             recurringFired++;
-            modifyHealth((int)poisonDamage, player);
-            System.out.println("Poisoned! " + poisonDamage + " dmg, " + recurringFired + " / " 
-                    + poisonDuration + " attacks.");
-            //startAnimation(SpellType.POISON);
+            
             if(player)
                 ((StatusBarActor)enemyChar.statusBar).setStatus(PoisonGemActor_01.GEM_TYPE);
             else ((StatusBarActor)playerChar.statusBar).setStatus(PoisonGemActor_01.GEM_TYPE);
         }
         
+        //End of spell.
         if(recurringFired >= poisonDuration) {
             poisonDuration = 0;
             poisonDamage = 0;
@@ -892,8 +904,6 @@ public class Match3Duels_Game implements Screen {
                 }
             }
         }
-        
-        checkMatches();
     }
     
     private static void debugResetAllGems() {
@@ -917,7 +927,7 @@ public class Match3Duels_Game implements Screen {
             }
         }
         
-        checkMatches();
+        checkMatches(true);
     }
     
     private static GemActor newGem() {
