@@ -136,17 +136,11 @@ public class Match3Duels_Game implements Screen {
     /** The actor for the potion count UI element. */
     private static Actor potionCounter;
     
-    /** The actor for the player's health bar. */
-    private static Actor playerHealthBar;
+    /** The player character class. */
+    private static Player playerChar;
     
-    /** The actor for the enemy's health bar. */
-    private static Actor enemyHealthBar;
-    
-    /** The player's shield bar. */
-    private static Actor playerStatusBar;
-    
-    /** The enemy's shield bar. */
-    private static Actor enemyStatusBar;
+    /** The enemy character class. */
+    private static Player enemyChar;
     
     /** The stage on which the board and UI elements will appear. */
     private static Stage gameStage;
@@ -244,31 +238,37 @@ public class Match3Duels_Game implements Screen {
         }
         
         //Initialize all extra UI elements and draw them to the screen.
-        potionCounter = new PotionCounter();
-        playerHealthBar = new HealthBarActor();
-        enemyHealthBar = new HealthBarActor();
+        /*potionCounter = new PotionCounter();
+        playerChar.healthBar = new HealthBarActor();
+        enemychar.healthBar = new HealthBarActor();
         
-        playerHealthBar.setPosition(0, 0);
+        playerChar.healthBar.setPosition(0, 0);
         
         playerHealth = MAX_HEALTH;
-        enemyHealth = MAX_HEALTH;
+        enemyHealth = MAX_HEALTH; */
         
-        playerStatusBar = new StatusBarActor();
-        enemyStatusBar = new StatusBarActor();
+        playerChar = new Player(gameStage);
+        enemyChar = new Player(gameStage);
         
-        playerStatusBar.setPosition(SPRITE_PADDING, boardGemArray[0][BOARD_ROWS - 1].getY()
+        playerChar.healthBar.setPosition(0, 0);
+        /*
+        playerChar.statusBar = new StatusBarActor();
+        enemyChar.statusBar = new StatusBarActor();*/
+        
+        playerChar.statusBar.setPosition(SPRITE_PADDING, boardGemArray[0][BOARD_ROWS - 1].getY()
                 + boardGemArray[0][BOARD_ROWS - 1].getHeight() + SPRITE_PADDING);
-        enemyStatusBar.setPosition(SPRITE_PADDING, enemyHealthBar.getY()
-                - enemyStatusBar.getHeight() - SPRITE_PADDING);
+        enemyChar.statusBar.setPosition(SPRITE_PADDING, enemyChar.healthBar.getY()
+                - enemyChar.healthBar.getHeight() - SPRITE_PADDING);
         
-        playerStatusBar.setSize(screenWidth - (2 * SPRITE_PADDING), playerStatusBar.getHeight());
-        enemyStatusBar.setSize(screenWidth - (2 * SPRITE_PADDING), enemyStatusBar.getHeight());
+        playerChar.statusBar.setSize(screenWidth - (2 * SPRITE_PADDING), playerChar.statusBar.getHeight());
+        enemyChar.statusBar.setSize(screenWidth - (2 * SPRITE_PADDING), enemyChar.statusBar.getHeight());
         
+        /*
         gameStage.addActor(potionCounter);
-        gameStage.addActor(playerHealthBar);
-        gameStage.addActor(enemyHealthBar);
-        gameStage.addActor(playerStatusBar);
-        gameStage.addActor(enemyStatusBar);
+        gameStage.addActor(playerChar.healthBar);
+        gameStage.addActor(enemychar.healthBar);
+        gameStage.addActor(playerChar.statusBar);
+        gameStage.addActor(enemyChar.statusBar);*/
         
         //Initial check for matches at game execution.
         checkMatches();
@@ -305,11 +305,11 @@ public class Match3Duels_Game implements Screen {
         fireAnimations();
         
         if(shieldEffect)
-            ((StatusBarActor)playerStatusBar).updateShield(delta, shieldDuration);
-        else ((StatusBarActor)playerStatusBar).update(delta);
+            ((StatusBarActor)playerChar.statusBar).updateShield(delta, shieldDuration);
+        else ((StatusBarActor)playerChar.statusBar).update(delta);
         
         //Temp
-        ((StatusBarActor)enemyStatusBar).update(delta);
+        ((StatusBarActor)enemyChar.statusBar).update(delta);
     }
     
     private static void usePotion() {
@@ -751,15 +751,15 @@ public class Match3Duels_Game implements Screen {
         if(gem.getType() != 2) {
             if(player) {
                 if(gem.getType() == 3 || gem.getType() == 4) {
-                    ((StatusBarActor)playerStatusBar).setStatus(gem.getType());
+                    ((StatusBarActor)playerChar.statusBar).setStatus(gem.getType());
                 } else {
-                    ((StatusBarActor)enemyStatusBar).setStatus(gem.getType());
+                    ((StatusBarActor)enemyChar.statusBar).setStatus(gem.getType());
                 }
             } else {
                 if(gem.getType() == 3 || gem.getType() == 4) {
-                    ((StatusBarActor)enemyStatusBar).setStatus(gem.getType());
+                    ((StatusBarActor)enemyChar.statusBar).setStatus(gem.getType());
                 } else {
-                    ((StatusBarActor)playerStatusBar).setStatus(gem.getType());
+                    ((StatusBarActor)playerChar.statusBar).setStatus(gem.getType());
                 }
             }
         }
@@ -776,30 +776,30 @@ public class Match3Duels_Game implements Screen {
             if(health < 0) {
                 health *= -1;
                 enemyHealth -= health;
-                enemyHealthBar.setX(enemyHealthBar.getX() 
-                        - (enemyHealthBar.getWidth() * health / 100));
+                enemyChar.healthBar.setX(enemyChar.healthBar.getX() 
+                        - (enemyChar.healthBar.getWidth() * health / 100));
             } else {
                 playerHealth += health;
                 if(playerHealth > MAX_HEALTH) {
                     playerHealth = MAX_HEALTH;
                 } else {
-                    playerHealthBar.setX(playerHealthBar.getX() 
-                            + (playerHealthBar.getWidth() * health / 100));
+                    playerChar.healthBar.setX(playerChar.healthBar.getX() 
+                            + (playerChar.healthBar.getWidth() * health / 100));
                 }
             }
         } else {
             if(health < 0) {
                 health *= -1;
                 playerHealth -= health;
-                playerHealthBar.setX(playerHealthBar.getX() 
-                        - (playerHealthBar.getWidth() * health / 100));
+                playerChar.healthBar.setX(playerChar.healthBar.getX() 
+                        - (playerChar.healthBar.getWidth() * health / 100));
             } else {
                 enemyHealth += health;
                 if(enemyHealth > MAX_HEALTH) {
                     enemyHealth = MAX_HEALTH;
                 } else {
-                    enemyHealthBar.setX(enemyHealthBar.getX() 
-                            + (enemyHealthBar.getWidth() * health / 100));
+                    enemyChar.healthBar.setX(enemyChar.healthBar.getX() 
+                            + (enemyChar.healthBar.getWidth() * health / 100));
                 }
             }
         }
@@ -834,8 +834,8 @@ public class Match3Duels_Game implements Screen {
                     + poisonDuration + " attacks.");
             //startAnimation(SpellType.POISON);
             if(player)
-                ((StatusBarActor)enemyStatusBar).setStatus(PoisonGemActor_01.GEM_TYPE);
-            else ((StatusBarActor)playerStatusBar).setStatus(PoisonGemActor_01.GEM_TYPE);
+                ((StatusBarActor)enemyChar.statusBar).setStatus(PoisonGemActor_01.GEM_TYPE);
+            else ((StatusBarActor)playerChar.statusBar).setStatus(PoisonGemActor_01.GEM_TYPE);
         }
         
         if(recurringFired >= poisonDuration) {
