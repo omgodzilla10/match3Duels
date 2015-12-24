@@ -15,6 +15,9 @@ import com.badlogic.gdx.utils.viewport.StretchViewport;
 public class Match3Duels_Game implements Screen {
     final Match3Duels_Main game;
     
+    /** The AI's difficulty level. */
+    static final int AI_DIFF = 1;
+    
     /** The number of rows on the board. */
     static final int BOARD_ROWS = 7;
     
@@ -157,6 +160,9 @@ public class Match3Duels_Game implements Screen {
     /** Used to animate the gem being swapped with the moved gem. */
     private static MoveToAction gemSwapAction;
     
+    /** The enemy AI. */
+    EnemyAI enemyAI;
+    
     private enum SpellType {
         FIRE,
         LIGHTNING,
@@ -262,6 +268,8 @@ public class Match3Duels_Game implements Screen {
             fillEmptySlots();
             checkMatches(true);
         } while (firstMatch);
+        
+        enemyAI = new EnemyAI(AI_DIFF, this);
     }
     
     @Override
@@ -300,6 +308,9 @@ public class Match3Duels_Game implements Screen {
         
         //Temp
         ((StatusBarActor)enemyChar.statusBar).update(delta);
+        
+        //Simulate the enemy ai.
+        enemyAI.simulate(delta);
     }
     
     private static void usePotion() {
@@ -736,7 +747,7 @@ public class Match3Duels_Game implements Screen {
      * @param matchLevel - The number of gems in the match.
      * @param player - Whether the spell was cast by the player or not.
      */
-    private static void fireSpell(GemActor gem, int matchLevel, boolean player) {
+    public static void fireSpell(GemActor gem, int matchLevel, boolean player) {
         int type = gem.getType();
         
         switch (type) {

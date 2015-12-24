@@ -7,6 +7,7 @@ public class Player {
     
     float health;
     boolean isPoisoned;
+    boolean isShielded;
     
     HealthBarActor healthBar;
     StatusBarActor statusBar;
@@ -14,6 +15,7 @@ public class Player {
     public Player(Stage gameStage) {
         health = MAX_HEALTH;
         isPoisoned = false;
+        isShielded = false;
         
         healthBar = new HealthBarActor();
         statusBar = new StatusBarActor();
@@ -39,5 +41,21 @@ public class Player {
      */
     public void changeHealth(float healthChange) {
         health += healthChange;
+    }
+    
+    public void setPoisoned(boolean b) {
+        isPoisoned = b;
+    }
+    
+    public boolean isPoisoned() {
+        return isPoisoned;
+    }
+    
+    public void setShielded(boolean b) {
+        isShielded = b;
+    }
+    
+    public boolean isShielded() {
+        return isShielded;
     }
 }
